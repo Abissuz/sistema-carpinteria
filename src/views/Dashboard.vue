@@ -9,6 +9,7 @@
       <button :class="{ active: vistaActual === 'crear' }" @click="vistaActual = 'crear'">Cotización</button>
       <button :class="{ active: vistaActual === 'cobro' }" @click="vistaActual = 'cobro'">Cuenta de Cobro</button>
       <button :class="{ active: vistaActual === 'historial' }" @click="vistaActual = 'historial'">Historial</button>
+      <button :class="{ active: vistaActual === 'ajustes' }" @click="vistaActual = 'ajustes'">Ajustes</button>
     </div>
 
     <main v-if="vistaActual === 'crear'" class="card-formulario">
@@ -68,7 +69,11 @@
     </main>
 
     <main v-if="vistaActual === 'historial'" class="card-formulario">
-      <h3>Historial de Documentos</h3>
+      <div class="header-historial">
+        <h3>Explorador de Documentos</h3>
+        <input v-model="busqueda" type="text" placeholder="🔍 Buscar por cliente o número..." class="input-buscador" />
+      </div>
+      
       <div class="tabla-responsive">
         <table class="tabla-historial">
           <thead>
@@ -77,199 +82,310 @@
               <th>Cliente</th>
               <th>Total</th>
               <th>Fecha</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="doc in historial" :key="doc.id">
+            <tr v-for="documento in historialFiltrado" :key="documento.id">
               <td class="bold">
-                <span :class="doc.tipo === 'cobro' ? 'badge-cobro' : 'badge-cot'">{{ doc.tipo === 'cobro' ? 'COBRO' : 'COT' }}</span>
-                {{ doc.numero }}
+                <span :class="documento.tipo === 'cobro' ? 'badge-cobro' : 'badge-cot'">
+                  {{ documento.tipo === 'cobro' ? 'COBRO' : 'COT' }}
+                </span>
+                {{ documento.numero }}
               </td>
-              <td>{{ doc.cliente }}</td>
-              <td>$ {{ formatearMoneda(doc.total) }}</td>
-              <td>{{ doc.fechaCreacionStr || 'N/A' }}</td>
+              <td>{{ documento.cliente }}</td>
+              <td>$ {{ formatearMoneda(documento.total) }}</td>
+              <td>{{ documento.fechaCreacionStr || 'N/A' }}</td>
+              <td class="acciones-celda">
+                <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar">📄 Abrir</button>
+                <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar">🗑️</button>
+              </td>
             </tr>
-            <tr v-if="historial.length === 0">
-              <td colspan="4" class="text-center">No hay documentos guardados todavía.</td>
+            <tr v-if="historialFiltrado.length === 0">
+              <td colspan="5" class="text-center">No se encontraron documentos.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </main>
 
-    <div class="pdf-wrapper">
-      <div id="pdf-content" class="pdf-template">
-        <div class="pdf-header">
-          <div class="logo-box">
-            <img src="/logo_sagrada.png" alt="Logo Sagrada Familia" class="img-logo" />
-          </div>
-          <div class="title-box">
-            <h3>CARPINTERIA SAGRADA FAMILIA</h3>
-            <h3>RAFAEL JOSE PEREZ LEON</h3>
-          </div>
-          <div class="date-box">
-            <table class="table-info">
-              <tbody>
-                <tr><td class="bg-red">Fecha:</td><td class="text-center bold">{{ fechaImpresion }}</td></tr>
-                <tr><td class="bg-red">Cotizacion<br>Nº</td><td class="text-center bold" style="font-size: 16px;">{{ numeroGenerado }}</td></tr>
-              </tbody>
-            </table>
-          </div>
+    <main v-if="vistaActual === 'ajustes'" class="card-formulario">
+      <h3>Configuración de Cotizaciones</h3>
+      <p style="margin-bottom: 20px; font-size: 14px; color: #555;">
+        Estos datos aparecerán automáticamente en las condiciones generales de las nuevas cotizaciones que generes.
+      </p>
+      <section class="seccion-form">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <label class="bold">Tiempo de entrega:</label>
+          <input v-model="ajustes.tiempoEntrega" />
+
+          <label class="bold mt-10">Condiciones de pago:</label>
+          <input v-model="ajustes.condicionesPago" />
+
+          <label class="bold mt-10">Forma de pago (Datos Bancarios):</label>
+          <textarea v-model="ajustes.formaPago" rows="3" style="width: 100%; font-family: Arial; padding: 10px;"></textarea>
+
+          <label class="bold mt-10">Garantía:</label>
+          <input v-model="ajustes.garantia" />
         </div>
-
-        <table class="table-client">
-          <tbody>
-            <tr>
-              <td class="bg-red w-15">Cliente:</td><td class="bold w-50">{{ cotizacionImpresion.cliente }}</td>
-              <td class="bg-red w-15">Documento:</td><td class="bold w-20">{{ cotizacionImpresion.documento }}</td>
-            </tr>
-            <tr>
-              <td class="bg-red w-15">Direccion:</td><td class="bold w-50">{{ cotizacionImpresion.direccion }}</td>
-              <td class="bg-red w-15">Torre:</td><td class="bold w-20">{{ cotizacionImpresion.torre }}</td>
-            </tr>
-            <tr>
-              <td class="bg-red w-15">Apto:</td>
-              <td class="bold w-50 p-0">
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="width: 25%; border: none; padding-left: 5px;">{{ cotizacionImpresion.apto }}</td>
-                    <td class="bg-red text-center" style="width: 25%; border-top: none; border-bottom: none; border-right: 2px solid black; border-left: 2px solid black;">Barrio:</td>
-                    <td style="width: 50%; border: none; padding-left: 5px;">{{ cotizacionImpresion.barrio }}</td>
-                  </tr>
-                </table>
-              </td>
-              <td class="bg-red w-15">Contacto:</td><td class="bold w-20">{{ cotizacionImpresion.contacto }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table class="table-items">
-          <thead>
-            <tr>
-              <th class="w-10 text-red">CANT.</th>
-              <th class="w-70 text-red">DESCRIPCION</th>
-              <th class="w-20 text-red">VALOR TOTAL</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, i) in cotizacionImpresion.items" :key="i">
-              <td class="text-center bold">{{ item.cantidad }}</td>
-              <td>{{ item.descripcion }}</td>
-              <td class="text-right">$ {{ formatearMoneda(item.valor) }}</td>
-            </tr>
-            <tr v-for="n in (8 - (cotizacionImpresion.items?.length || 0))" :key="'empty-'+n">
-              <td></td><td></td><td class="text-right">$ 0.00</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="total-box">
-          <table style="width: 100%; border-collapse: collapse;">
-            <tbody>
-              <tr>
-                <td class="w-80 text-right bg-red bold text-white" style="border: 2px solid black; padding: 5px;">TOTAL:</td>
-                <td class="w-20 text-right bold text-red" style="border: 2px solid black; padding: 5px;">$ {{ formatearMoneda(cotizacionImpresion.total || calcularTotal()) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="condiciones-box">
-          <p class="text-red bold italic">OBSERVACIONES: {{ cotizacionImpresion.observaciones }}</p>
-          <p class="bold">"PRESUPUESTO NO INCLUYE IVA, NI RETENCIONES" INCLUYE TRANSPORTE E INSTALACION.</p>
-          <p class="bold underline">CONDICIONES GENERALES:</p>
-          <ul class="lista-condiciones">
-            <li><span class="bold">Tiempo de entrega:</span> 30 dias habiles</li>
-            <li><span class="bold">Condiciones de pago:</span> 60% al formalizar el pedido, 20% por avance de obra y 20% a la entrega.</li>
-            <li><span class="bold">Forma de pago:</span> Efectivo - Transferencia bancaria. Cta de Ahorros BANCOLOMBIA 669-000015-05 Rafael Jose Pérez Leon.</li>
-            <li><span class="bold">Garantía:</span> 02 años por defectos de fabricación. Herrajes 1 mes.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="pdf-wrapper">
-      <div id="pdf-content-cobro" class="pdf-template-cobro">
-        
-        <div class="texto-derecha mb-40">
-          <p>{{ cobroImpresion.fechaCiudad }}</p>
-        </div>
-
-        <h2 class="titulo-centrado bold mb-20">CUENTA DE COBRO</h2>
-
-        <div class="texto-centrado mb-30">
-          <p class="uppercase">{{ cobroImpresion.cliente }}</p>
-          <p class="uppercase">{{ cobroImpresion.documento }}</p>
-          <p class="uppercase" v-if="cobroImpresion.nit">NIT. {{ cobroImpresion.nit }}</p>
-          <p class="uppercase">{{ cobroImpresion.direccion }}</p>
-        </div>
-
-        <div class="texto-centrado mb-30">
-          <p class="bold mb-10">DEBE A:</p>
-          <p class="uppercase">RAFAEL JOSÉ PÉREZ LEÓN</p>
-          <p class="uppercase">PASAPORTE: 112472838</p>
-        </div>
-
-        <div class="texto-centrado mb-30">
-          <p class="bold mb-10">LA SUMA DE:</p>
-          <p class="uppercase">{{ cobroImpresion.montoLetras }} ($ {{ formatearMoneda(cobroImpresion.monto) }})</p>
-        </div>
-
-        <div class="texto-centrado mb-10">
-          <p class="bold">POR CONCEPTO DE:</p>
-        </div>
-        <div class="mb-40">
-          <p class="texto-justificado uppercase">{{ cobroImpresion.concepto }}</p>
-        </div>
-        
-        <div class="texto-izquierda mb-40">
-          <p class="bold">PAGO DE SERVICIOS &nbsp;&nbsp;&nbsp;&nbsp; $ {{ formatearMoneda(cobroImpresion.monto) }}</p>
-        </div>
-
-        <div class="footer-cobro-izq">
-          <div class="mb-40">
-            <p class="bold uppercase">{{ cobroImpresion.cliente }}</p>
-            <p class="uppercase">{{ cobroImpresion.documento }}</p>
-            <p class="uppercase" v-if="cobroImpresion.nit">NIT. {{ cobroImpresion.nit }}</p>
-            <p class="uppercase">{{ cobroImpresion.direccion }}</p>
-          </div>
-          
-          <div class="firma-rafael-izq mt-60">
-            <p class="bold uppercase">RAFAEL JOSE PÉREZ LEÓN</p>
-            <p class="uppercase">PASAPORTE 112472838</p>
-          </div>
-        </div>
-
-      </div>
-    </div>
+        <button @click="guardarAjustes" class="btn-guardar" :disabled="cargandoAjustes">
+          {{ cargandoAjustes ? 'Guardando...' : 'Guardar Ajustes' }}
+        </button>
+      </section>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, runTransaction, collection, setDoc, serverTimestamp, query, orderBy, onSnapshot } from 'firebase/firestore';
-import html2pdf from 'html2pdf.js';
+// --- NUEVAS IMPORTACIONES NATIVAS ---
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import { ref, onMounted, computed } from 'vue';
+import { doc, runTransaction, collection, setDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, getDoc } from 'firebase/firestore';
+
+// Inicializar fuentes (A prueba de balas para Vite en Producción)
+const vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : (pdfFonts.vfs || pdfFonts.default?.vfs || pdfFonts.default?.pdfMake?.vfs);
+pdfMake.vfs = vfs;
 
 const router = useRouter();
 const cargando = ref(false);
 const vistaActual = ref('crear'); 
-const historial = ref([]); 
+const historial = ref([]);
+const busqueda = ref(''); 
 
-// Variables Cotización
+// === AJUSTES ===
+const cargandoAjustes = ref(false);
+const ajustes = ref({
+  tiempoEntrega: '30 dias habiles',
+  condicionesPago: '60% al formalizar el pedido, 20% por avance de obra y 20% a la entrega.',
+  formaPago: 'Efectivo - Transferencia bancaria. Cta de Ahorros BANCOLOMBIA 669-000015-05 Rafael Jose Pérez Leon.',
+  garantia: '02 años por defectos de fabricación. Herrajes 1 mes.'
+});
+
+// Buscador Inteligente
+const historialFiltrado = computed(() => {
+  if (!busqueda.value) return historial.value;
+  const termino = busqueda.value.toLowerCase();
+  return historial.value.filter(doc => 
+    doc.cliente?.toLowerCase().includes(termino) || 
+    doc.numero?.toLowerCase().includes(termino)
+  );
+});
+
+// Eliminar Documento
+const eliminarDocumento = async (id, numero) => {
+  const confirmar = confirm(`¿Estás seguro de eliminar el documento ${numero}?`);
+  if (confirmar) {
+    try {
+      await deleteDoc(doc(db, "documentos_guardados", id));
+      alert("Documento eliminado con éxito.");
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+    }
+  }
+};
+
+// ==========================================
+// EL NUEVO MOTOR DE PDF NATIVO (NIVEL ENTERPRISE)
+// ==========================================
+const generarPDF = (tipo, datos) => {
+  const estilos = {
+    header: { fontSize: 16, bold: true, alignment: 'center' },
+    subheader: { fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 15] },
+    tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#cc0000', alignment: 'center', margin: [2, 2, 2, 2] },
+    textoBold: { bold: true, fontSize: 10 },
+    textoNormal: { fontSize: 10 },
+    textoPequeno: { fontSize: 9 }
+  };
+
+  let documentDefinition = {};
+
+  if (tipo === 'cotizacion') {
+    // 1. Armar las filas de los ítems
+    const filasItems = [
+      [{ text: 'CANT.', style: 'tableHeader' }, { text: 'DESCRIPCION', style: 'tableHeader' }, { text: 'VALOR TOTAL', style: 'tableHeader' }]
+    ];
+    
+    // Si la factura tiene items, los agregamos
+    if(datos.items && datos.items.length > 0) {
+      datos.items.forEach(item => {
+        filasItems.push([
+          { text: item.cantidad?.toString() || '1', alignment: 'center', style: 'textoBold' }, 
+          { text: item.descripcion || '', style: 'textoNormal' }, 
+          { text: '$ ' + formatearMoneda(item.valor), alignment: 'right', style: 'textoNormal' }
+        ]);
+      });
+    }
+
+    // Completar hasta 8 filas para que se vea como el formato original
+    const faltantes = 8 - (datos.items?.length || 0);
+    for(let i=0; i < faltantes; i++) {
+      filasItems.push(['', '', { text: '$ 0.00', alignment: 'right', style: 'textoNormal' }]);
+    }
+
+    // 2. Construir el documento
+    documentDefinition = {
+      content: [
+        { text: 'CARPINTERIA SAGRADA FAMILIA', style: 'header' },
+        { text: 'RAFAEL JOSE PEREZ LEON', style: 'subheader' },
+        
+        // Bloque Fecha y Número
+        {
+          columns: [
+            { width: '*', text: '' }, // Espacio en blanco a la izquierda
+            {
+              width: 'auto',
+              table: {
+                body: [
+                  [{ text: 'Fecha:', style: 'tableHeader' }, { text: datos.fechaCreacionStr || '', alignment: 'center', style: 'textoBold' }],
+                  [{ text: 'Cotizacion Nº', style: 'tableHeader' }, { text: datos.numero || '', alignment: 'center', style: 'textoBold' }]
+                ]
+              }
+            }
+          ],
+          margin: [0, 0, 0, 15]
+        },
+
+        // Tabla Cliente (Rediseñada a 6 columnas para el bloque Barrio)
+        {
+          table: {
+            widths: ['15%', '15%', '15%', '20%', '15%', '20%'],
+            body: [
+              [
+                { text: 'Cliente:', style: 'tableHeader' }, 
+                { text: datos.cliente || '', style: 'textoBold', colSpan: 3 }, 
+                {}, 
+                {}, 
+                { text: 'Documento:', style: 'tableHeader' }, 
+                { text: datos.documento || '', style: 'textoBold' }
+              ],
+              [
+                { text: 'Direccion:', style: 'tableHeader' }, 
+                { text: datos.direccion || '', style: 'textoBold', colSpan: 3 }, 
+                {}, 
+                {}, 
+                { text: 'Torre:', style: 'tableHeader' }, 
+                { text: datos.torre || '', style: 'textoBold' }
+              ],
+              [
+                { text: 'Apto:', style: 'tableHeader' }, 
+                { text: datos.apto || '', style: 'textoBold' }, 
+                { text: 'Barrio:', style: 'tableHeader' }, // ¡Aquí está la magia roja!
+                { text: datos.barrio || '', style: 'textoBold' }, 
+                { text: 'Contacto:', style: 'tableHeader' }, 
+                { text: datos.contacto || '', style: 'textoBold' }
+              ]
+            ]
+          },
+          margin: [0, 0, 0, 10]
+        },
+
+        // Tabla Items
+        {
+          table: { widths: ['10%', '65%', '25%'], body: filasItems },
+          margin: [0, 0, 0, 10]
+        },
+
+        // Total
+        {
+          table: {
+            widths: ['75%', '25%'],
+            body: [
+              [{ text: 'TOTAL:', style: 'tableHeader', alignment: 'right' }, { text: '$ ' + formatearMoneda(datos.total), alignment: 'right', bold: true, color: '#cc0000' }]
+            ]
+          },
+          margin: [0, 0, 0, 15]
+        },
+
+        // Condiciones
+        { text: 'OBSERVACIONES: ' + (datos.observaciones || ''), color: '#cc0000', bold: true, italic: true, fontSize: 10, margin: [0, 0, 0, 5] },
+        { text: '"PRESUPUESTO NO INCLUYE IVA, NI RETENCIONES" INCLUYE TRANSPORTE E INSTALACION.', style: 'textoBold', margin: [0, 0, 0, 5] },
+        { text: 'CONDICIONES GENERALES:', style: 'textoBold', decoration: 'underline', margin: [0, 0, 0, 5] },
+        {
+          ul: [
+            { text: [{ text: 'Tiempo de entrega: ', bold: true }, ajustes.value.tiempoEntrega] },
+            { text: [{ text: 'Condiciones de pago: ', bold: true }, ajustes.value.condicionesPago] },
+            { text: [{ text: 'Forma de pago: ', bold: true }, ajustes.value.formaPago] },
+            { text: [{ text: 'Garantía: ', bold: true }, ajustes.value.garantia] }
+          ],
+          style: 'textoPequeno'
+        }
+      ],
+      styles: estilos
+    };
+
+  } else {
+    // --- DISEÑO PARA CUENTA DE COBRO ---
+    documentDefinition = {
+      defaultStyle: {
+        fontSize: 12, 
+        lineHeight: 1.2
+      },
+      content: [
+        { text: datos.fechaCiudad || '', alignment: 'right', margin: [0, 0, 0, 50] },
+        { text: 'CUENTA DE COBRO', fontSize: 14, bold: true, alignment: 'center', margin: [0, 0, 0, 30] },
+        
+        { text: (datos.cliente || '').toUpperCase(), alignment: 'center' },
+        // Corrección de documento/documeto aplicada aquí:
+        datos.documento ? { text: 'CE ' + (datos.documento || '').toUpperCase(), alignment: 'center' } : '',
+        datos.nit ? { text: 'NIT. ' + datos.nit, alignment: 'center' } : '',
+        { text: (datos.direccion || '').toUpperCase(), alignment: 'center', margin: [0, 0, 0, 30] },
+
+        { text: 'DEBE A:', alignment: 'center', bold: true, margin: [0, 0, 0, 10] },
+        { text: 'RAFAEL JOSÉ PÉREZ LEÓN', alignment: 'center' },
+        { text: 'PASAPORTE: 112472838', alignment: 'center', margin: [0, 0, 0, 30] },
+
+        { text: 'LA SUMA DE:', alignment: 'center', bold: true, margin: [0, 0, 0, 10] },
+        { text: `${(datos.montoLetras || '').toUpperCase()} ($ ${formatearMoneda(datos.total)})`, alignment: 'center', margin: [0, 0, 0, 30] },
+
+        { text: 'POR CONCEPTO DE:', alignment: 'center', bold: true, margin: [0, 0, 0, 15] },
+        { text: (datos.concepto || '').toUpperCase(), alignment: 'justify', margin: [0, 0, 0, 50] },
+
+        // PAGO DE SERVICIOS separado perfectamente
+        {
+          columns: [
+            { text: 'PAGO DE SERVICIOS', bold: true, width: 'auto' },
+            { text: `$ ${formatearMoneda(datos.total)}`, bold: true, width: '*', margin: [30, 0, 0, 0] }
+          ],
+          margin: [0, 0, 0, 60]
+        },
+
+        // Firmas / Footer
+        { text: (datos.cliente || '').toUpperCase(), bold: true },
+        datos.documento ? { text: 'CE ' + (datos.documento || '').toUpperCase(), bold: true } : '',
+        datos.nit ? { text: 'NIT. ' + datos.nit, bold: true } : '',
+        { text: (datos.direccion || '').toUpperCase(), bold: true, margin: [0, 0, 0, 70] },
+
+        // AQUÍ IRÁ LA IMAGEN DE LA FIRMA LUEGO SI LA TIENES
+        { text: 'RAFAEL JOSE PÉREZ LEÓN', bold: true },
+        { text: 'PASAPORTE 112472838', bold: true }
+      ],
+      styles: estilos
+    };
+  }
+
+  // Ordenamos la creación y descarga limpia
+  pdfMake.createPdf(documentDefinition).download(`${tipo === 'cotizacion' ? 'Cotizacion' : 'Cobro'}_${datos.numero}.pdf`);
+  cargando.value = false;
+};
+
+// Generar PDF para Previsualizar/Descargar desde el historial
+const verDocumento = (docGuardado) => {
+  generarPDF(docGuardado.tipo, docGuardado);
+};
+
+// Variables
 const numeroGenerado = ref('0000-00');
 const fechaImpresion = ref('');
 const cotizacionBase = { cliente: '', documento: '', nit: '', direccion: '', torre: '', apto: '', barrio: '', contacto: '', observaciones: '', items: [{ cantidad: 1, descripcion: '', valor: null }] };
 const cotizacion = ref(JSON.parse(JSON.stringify(cotizacionBase)));
-const cotizacionImpresion = ref(JSON.parse(JSON.stringify(cotizacionBase)));
 
-// Variables Cuenta de Cobro
 const numeroCobroGenerado = ref('0');
 const cobroBase = { cliente: '', documento: '', nit: '', direccion: '', fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: '' };
 const cobro = ref(JSON.parse(JSON.stringify(cobroBase)));
-const cobroImpresion = ref(JSON.parse(JSON.stringify(cobroBase)));
 
 // Funciones Auxiliares
 const agregarItem = () => cotizacion.value.items.push({ cantidad: 1, descripcion: '', valor: null });
@@ -278,28 +394,37 @@ const calcularTotal = () => cotizacion.value.items.reduce((total, item) => total
 const formatearMoneda = (valor) => valor ? Number(valor).toLocaleString('en-US', {minimumFractionDigits: 2}) : '0.00';
 const obtenerFechaActual = () => { const f = new Date(); return `${f.getDate()}/${f.getMonth() + 1}/${f.getFullYear()}`; };
 
-// Cargar Historial Unificado
-onMounted(() => {
+// Cargar Datos Iniciales
+onMounted(async () => {
   const q = query(collection(db, "documentos_guardados"), orderBy("fechaCreacion", "desc"));
   onSnapshot(q, (querySnapshot) => {
     const dataTemp = [];
-    querySnapshot.forEach((doc) => {
-      dataTemp.push({ id: doc.id, ...doc.data() });
-    });
+    querySnapshot.forEach((doc) => { dataTemp.push({ id: doc.id, ...doc.data() }); });
     historial.value = dataTemp;
   });
+
+  try {
+    const docAjustes = await getDoc(doc(db, "configuracion", "general"));
+    if (docAjustes.exists()) { ajustes.value = docAjustes.data(); }
+  } catch(e) { console.error("Error al cargar ajustes:", e); }
 });
 
-// Guardar Cotización
+const guardarAjustes = async () => {
+  cargandoAjustes.value = true;
+  try {
+    await setDoc(doc(db, "configuracion", "general"), ajustes.value);
+    alert("¡Ajustes actualizados correctamente!");
+  } catch (error) { console.error(error); }
+  cargandoAjustes.value = false;
+};
+
+// Guardar Cotización (¡AHORA GUARDA LOS ÍTEMS COMPLETOS!)
 const procesarCotizacion = async () => {
   if (!cotizacion.value.cliente) return alert("Ingresa el cliente.");
   cargando.value = true;
   try {
     const fecha = new Date();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anio = String(fecha.getFullYear()).slice(-2);
-    const periodoId = `${mes}${anio}`; 
-
+    const periodoId = `${String(fecha.getMonth() + 1).padStart(2, '0')}${String(fecha.getFullYear()).slice(-2)}`; 
     const correlativoRef = doc(db, "correlativos", periodoId);
     let nuevoNumero = 1;
 
@@ -310,152 +435,177 @@ const procesarCotizacion = async () => {
     });
 
     numeroGenerado.value = `${periodoId}-${String(nuevoNumero).padStart(2, '0')}`;
-    fechaImpresion.value = obtenerFechaActual();
-    cotizacionImpresion.value = JSON.parse(JSON.stringify(cotizacion.value)); 
-
-    await setDoc(doc(collection(db, "documentos_guardados"), `COT-${numeroGenerado.value}`), {
+    
+    // Armamos el objeto con ABSOLUTAMENTE TODO para Firebase
+    const datosCompletos = {
       tipo: 'cotizacion',
       numero: numeroGenerado.value,
       cliente: cotizacion.value.cliente,
+      documento: cotizacion.value.documento,
+      direccion: cotizacion.value.direccion,
+      torre: cotizacion.value.torre,
+      apto: cotizacion.value.apto,
+      barrio: cotizacion.value.barrio,
+      contacto: cotizacion.value.contacto,
+      observaciones: cotizacion.value.observaciones,
+      items: cotizacion.value.items,
       total: calcularTotal(),
-      fechaCreacionStr: fechaImpresion.value,
+      fechaCreacionStr: obtenerFechaActual(),
       fechaCreacion: serverTimestamp(),
-    });
+    };
 
-    generarPDF('pdf-content', `Cotizacion_${numeroGenerado.value}.pdf`);
+    await setDoc(doc(collection(db, "documentos_guardados"), `COT-${numeroGenerado.value}`), datosCompletos);
+    generarPDF('cotizacion', datosCompletos);
   } catch (error) { console.error(error); alert("Error al guardar."); cargando.value = false; }
 };
 
-// Guardar Cuenta de Cobro (Correlativo simple 1, 2, 3...)
+// Guardar Cuenta de Cobro (¡GUARDA COMPLETO!)
 const procesarCobro = async () => {
   if (!cobro.value.cliente || !cobro.value.monto) return alert("Llena los campos requeridos.");
   cargando.value = true;
-  
   try {
-    const correlativoCobroRef = doc(db, "correlativos", "cuentas_cobro");
+    const correlativoRef = doc(db, "correlativos", "cuentas_cobro");
     let nuevoNumero = 1;
 
     await runTransaction(db, async (transaction) => {
-      const docSnap = await transaction.get(correlativoCobroRef);
-      if (!docSnap.exists()) { transaction.set(correlativoCobroRef, { ultimoNumero: 1 }); } 
-      else { nuevoNumero = docSnap.data().ultimoNumero + 1; transaction.update(correlativoCobroRef, { ultimoNumero: nuevoNumero }); }
+      const docSnap = await transaction.get(correlativoRef);
+      if (!docSnap.exists()) { transaction.set(correlativoRef, { ultimoNumero: 1 }); } 
+      else { nuevoNumero = docSnap.data().ultimoNumero + 1; transaction.update(correlativoRef, { ultimoNumero: nuevoNumero }); }
     });
 
     numeroCobroGenerado.value = String(nuevoNumero);
-    cobroImpresion.value = JSON.parse(JSON.stringify(cobro.value)); 
-
-    await setDoc(doc(collection(db, "documentos_guardados"), `COB-${numeroCobroGenerado.value}`), {
+    
+    const datosCompletosCobro = {
       tipo: 'cobro',
       numero: numeroCobroGenerado.value,
       cliente: cobro.value.cliente,
+      documento: cobro.value.documento,
+      nit: cobro.value.nit,
+      direccion: cobro.value.direccion,
+      fechaCiudad: cobro.value.fechaCiudad,
+      montoLetras: cobro.value.montoLetras,
+      concepto: cobro.value.concepto,
       total: cobro.value.monto,
       fechaCreacionStr: obtenerFechaActual(),
       fechaCreacion: serverTimestamp(),
-    });
+    };
 
-    generarPDF('pdf-content-cobro', `Cuenta_Cobro_${numeroCobroGenerado.value}.pdf`, () => {
-      cobro.value = JSON.parse(JSON.stringify(cobroBase)); 
-    });
+    await setDoc(doc(collection(db, "documentos_guardados"), `COB-${numeroCobroGenerado.value}`), datosCompletosCobro);
+    generarPDF('cobro', datosCompletosCobro);
+    cobro.value = JSON.parse(JSON.stringify(cobroBase)); 
   } catch (error) { console.error(error); alert("Error al guardar cobro."); cargando.value = false; }
-};
-
-// Función genérica para exportar el PDF
-const generarPDF = (idElemento, nombreArchivo, callback) => {
-  const elemento = document.getElementById(idElemento);
-  const opciones = {
-    margin:       [20, 20, 20, 20],
-    filename:     nombreArchivo,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, windowWidth: 800, width: 800 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
-  html2pdf().set(opciones).from(elemento).save().then(() => {
-    cargando.value = false;
-    if(callback) callback();
-  });
 };
 
 const cerrarSesion = async () => { await signOut(auth); router.push('/login'); };
 </script>
 
 <style scoped>
-/* ESTILOS WEB */
-.dashboard-container { max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial; }
-.header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.btn-salir { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-.tabs { display: flex; gap: 10px; margin-bottom: 0; }
-.tabs button { padding: 12px 20px; border: none; background: #ddd; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s; }
-.tabs button.active { background: #1e90ff; color: white; }
-.card-formulario { background: #f9f9f9; padding: 20px; border-radius: 0 8px 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-.seccion-form { margin-bottom: 25px; }
-.grid-inputs, .grid-inputs-cobro { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial; }
-.textarea-cobro { width: 100%; height: 80px; margin-top: 10px; resize: vertical; }
-.fila-item { display: flex; gap: 10px; margin-bottom: 10px; }
-.input-cant { width: 60px; } .input-desc { flex-grow: 1; } .input-valor { width: 120px; }
-.btn-agregar, .btn-eliminar { color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-.btn-agregar { background: #2ed573; } .btn-eliminar { background: #ff6b81; }
-.btn-guardar, .btn-guardar-cobro { color: white; border: none; padding: 15px 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 15px; }
-.btn-guardar { background: #1e90ff; } .btn-guardar-cobro { background: #2ed573; }
-.btn-guardar:disabled, .btn-guardar-cobro:disabled { background: #ccc; }
+/* ESTILOS WEB PRINCIPALES - DISEÑO MODERNO "CARPINTERÍA PREMIUM" */
+:global(body) {
+  background-color: #f4f1ea; /* Fondo cálido tipo madera clara/crema */
+  color: #2c3e50;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dashboard-container { 
+  max-width: 900px; 
+  margin: 30px auto; 
+  padding: 0 20px; 
+}
+
+.header-nav { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 30px; 
+  background: white;
+  padding: 15px 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.header-nav h2 { margin: 0; color: #8b4513; font-weight: 800; }
+
+.btn-salir { 
+  background: #ff4757; color: white; border: none; padding: 10px 20px; 
+  border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; 
+}
+.btn-salir:hover { background: #ff6b81; transform: scale(1.05); }
+
+/* Pestañas (Tabs) */
+.tabs { display: flex; gap: 5px; margin-bottom: -10px; position: relative; z-index: 1; padding: 0 10px; }
+.tabs button { 
+  padding: 15px 25px; border: none; background: #e2dcd0; color: #666; 
+  cursor: pointer; border-radius: 12px 12px 0 0; font-weight: bold; 
+  font-size: 15px; transition: 0.3s; 
+}
+.tabs button:hover { background: #d4ccb9; }
+.tabs button.active { 
+  background: white; color: #d35400; /* Color madera/naranja */
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+}
+
+/* Tarjetas Principales */
+.card-formulario { 
+  background: white; padding: 35px; border-radius: 12px; 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: relative; z-index: 2; 
+}
+.card-formulario h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 25px; }
+
+/* Inputs y Formularios */
+.seccion-form { margin-bottom: 30px; }
+.seccion-form h4 { color: #8b4513; margin-bottom: 15px; }
+.grid-inputs, .grid-inputs-cobro { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+
+input, textarea { 
+  padding: 12px 15px; border: 1.5px solid #dcdde1; border-radius: 8px; 
+  font-family: inherit; font-size: 15px; transition: 0.3s; background: #fafafa; color: #2c3e50;
+}
+input:focus, textarea:focus { 
+  border-color: #d35400; background: white; outline: none; box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.1); 
+}
+.textarea-cobro { width: 100%; height: 100px; margin-top: 15px; resize: vertical; }
+
+/* Items Cotización */
+.fila-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
+.input-cant { width: 80px; } .input-desc { flex-grow: 1; } .input-valor { width: 140px; }
+
+/* Botones de acción */
+.btn-agregar, .btn-eliminar { color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+.btn-agregar { background: #2ed573; margin-top: 10px;} .btn-agregar:hover { background: #26b962; }
+.btn-eliminar { background: #ff6b81; padding: 10px 15px; } .btn-eliminar:hover { background: #ff4757; }
+
+.btn-guardar, .btn-guardar-cobro { 
+  color: white; border: none; padding: 18px 20px; border-radius: 8px; 
+  cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; margin-top: 25px; transition: 0.3s; 
+}
+.btn-guardar { background: linear-gradient(135deg, #d35400, #e67e22); box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3); } 
+.btn-guardar:hover { background: linear-gradient(135deg, #e67e22, #d35400); transform: translateY(-2px); }
+.btn-guardar-cobro { background: linear-gradient(135deg, #27ae60, #2ecc71); box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); }
+.btn-guardar-cobro:hover { background: linear-gradient(135deg, #2ecc71, #27ae60); transform: translateY(-2px); }
+.btn-guardar:disabled, .btn-guardar-cobro:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.mt-10 { margin-top: 10px; }
+.seccion-total h3 { font-size: 24px; color: #d35400; text-align: right; margin-bottom: 15px; border: none; }
 
 /* Historial */
-.tabla-responsive { overflow-x: auto; margin-top: 15px; }
+.header-historial { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+.input-buscador { width: 100%; padding: 15px; border: 2px solid #e2dcd0; border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s; background: white; }
+.input-buscador:focus { border-color: #d35400; box-shadow: 0 0 10px rgba(211, 84, 0, 0.1); }
+
+.tabla-responsive { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #e2dcd0; }
 .tabla-historial { width: 100%; border-collapse: collapse; background: white; }
-.tabla-historial th, .tabla-historial td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-.tabla-historial th { background: #f1f1f1; }
-.badge-cot { background: #1e90ff; color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
-.badge-cobro { background: #2ed573; color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
+.tabla-historial th, .tabla-historial td { border-bottom: 1px solid #e2dcd0; padding: 15px; text-align: left; }
+.tabla-historial th { background: #f8f6f2; color: #8b4513; font-weight: bold; }
+.tabla-historial tr:hover { background: #fafafa; }
 
-/* ======================================================== */
-/* ESTILOS EXACTOS PDF: COTIZACIÓN (Oculto)                 */
-/* ======================================================== */
-.pdf-wrapper { position: absolute; top: -10000px; left: 0; width: 800px; }
-.pdf-template { width: 800px; background: white; color: black; font-family: Arial, sans-serif; padding: 15px; box-sizing: border-box; }
-.bold { font-weight: bold; } .italic { font-style: italic; } .underline { text-decoration: underline; }
-.text-center { text-align: center; } .text-right { text-align: right; }
-.text-red { color: red; } .text-white { color: white; } .bg-red { background-color: red; color: white; padding: 2px 5px; }
-.pdf-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-.logo-box, .date-box { width: 25%; } .title-box { width: 50%; text-align: center; font-style: italic; }
-.table-info, .table-client, .table-items { border-collapse: collapse; width: 100%; border: 3px solid black; margin-bottom: 10px; }
-.table-info td, .table-client td, .table-items th { border: 2px solid black; padding: 3px 5px; }
-.table-items td { border: 1px solid black; padding: 5px; height: 25px; }
-.w-10{width:10%} .w-15{width:15%} .w-20{width:20%} .w-50{width:50%} .w-70{width:70%} .w-80{width:80%}
-.condiciones-box { font-size: 11px; margin-top: 10px; }
-.img-logo { max-width: 100%; max-height: 80px; display: block; margin: 0 auto; }
-.p-0 { padding: 0 !important; }
-/* ======================================================== */
-/* ESTILOS EXACTOS PDF: CUENTA DE COBRO (Oculto)            */
-/* ======================================================== */
-.pdf-template-cobro {
-  width: 800px; background: white; color: black; font-family: 'Times New Roman', serif; 
-  padding: 60px; box-sizing: border-box; font-size: 16px; line-height: 1.5;
-}
-.pdf-template-cobro p { margin: 0; }
-.texto-derecha { text-align: right; }
-.texto-centrado { text-align: center; }
-.texto-izquierda { text-align: left; }
-.texto-justificado { text-align: justify; }
-.uppercase { text-transform: uppercase; }
-.bold { font-weight: bold; }
+.badge-cot { background: #1e90ff; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; margin-right: 8px; font-weight: bold; }
+.badge-cobro { background: #2ed573; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; margin-right: 8px; font-weight: bold; }
 
-/* Espaciadores */
-.mb-10 { margin-bottom: 10px; }
-.mb-20 { margin-bottom: 20px; }
-.mb-30 { margin-bottom: 30px; }
-.mb-40 { margin-bottom: 40px; }
-.mt-60 { margin-top: 80px; } /* Este es el gran espacio para la firma */
-
-.titulo-centrado { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 30px; color: black; }
-
-/* Pie de página a la izquierda */
-.footer-cobro-izq {
-  text-align: left;
-  margin-top: 60px;
-}
-.firma-rafael-izq {
-  /* Aquí no hay línea arriba, solo el texto alineado */
-  text-align: left;
-}
+.acciones-celda { display: flex; gap: 8px; }
+.btn-ver { background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s;}
+.btn-borrar { background: #ff4757; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s;}
+.btn-ver:hover { background: #e67e22; transform: translateY(-1px); }
+.btn-borrar:hover { background: #ff6b81; transform: translateY(-1px); }
 </style>
