@@ -163,7 +163,9 @@ import { auth, db } from '../firebase';
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { doc, runTransaction, collection, setDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, getDoc } from 'firebase/firestore';
 
-// 👇 IMPORTAMOS LAS HERRAMIENTAS DESDE NUESTRO NUEVO ARCHIVO 👇
+// 👇 IMPORTAMOS SWEETALERT2 👇
+import Swal from 'sweetalert2';
+
 import { generarPDF, numeroALetras, formatearMoneda } from '../utils/generadorPdf';
 
 const router = useRouter();
@@ -172,10 +174,8 @@ const vistaActual = ref('crear');
 const historial = ref([]);
 const busqueda = ref(''); 
 
-// === ESTADO DE EDICIÓN ===
 const editandoId = ref(null);
 
-// === LÓGICA DEL BOTÓN DE INSTALACIÓN (PWA) ===
 const deferredPrompt = ref(window.deferredPWA || null);
 const yaInstalado = ref(window.matchMedia('(display-mode: standalone)').matches);
 
@@ -190,7 +190,6 @@ const instalarApp = async () => {
     deferredPrompt.value.prompt();
     const { outcome } = await deferredPrompt.value.userChoice;
     if (outcome === 'accepted') {
-      console.log('¡App instalada por el usuario!');
       yaInstalado.value = true;
     }
     deferredPrompt.value = null; 
@@ -215,28 +214,38 @@ const historialFiltrado = computed(() => {
   );
 });
 
+// 👇 NUEVA ALERTA PARA ELIMINAR 👇
 const eliminarDocumento = async (id, numero) => {
-  const confirmar = confirm(`¿Estás seguro de eliminar el documento ${numero}?`);
-  if (confirmar) {
+  const result = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: `Vas a eliminar el documento ${numero}. Esto no se puede deshacer.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ff4757',
+    cancelButtonColor: '#95a5a6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (result.isConfirmed) {
     try {
       await deleteDoc(doc(db, "documentos_guardados", id));
-      alert("Documento eliminado con éxito.");
+      Swal.fire('¡Eliminado!', 'El documento ha sido borrado de la base de datos.', 'success');
     } catch (error) {
       console.error("Error al eliminar:", error);
+      Swal.fire('Error', 'No se pudo eliminar el documento.', 'error');
     }
   }
 };
 
-// === FUNCIONES DE EDICIÓN ===
 const editarDocumento = (docGuardado) => {
   editandoId.value = docGuardado.id; 
-  
   if (docGuardado.tipo === 'cotizacion') {
     cotizacion.value = JSON.parse(JSON.stringify(docGuardado)); 
     vistaActual.value = 'crear'; 
   } else if (docGuardado.tipo === 'cobro') {
     cobro.value = JSON.parse(JSON.stringify(docGuardado));
-    cobro.value.monto = docGuardado.total; // Mapeamos el total al input de monto
+    cobro.value.monto = docGuardado.total; 
     vistaActual.value = 'cobro';
   }
 };
@@ -248,11 +257,21 @@ const cancelarEdicion = () => {
   vistaActual.value = 'historial';
 };
 
-// === NAVEGACIÓN SEGURA ===
-const cambiarVista = (nuevaVista) => {
+// 👇 NUEVA ALERTA PARA CAMBIO DE PESTAÑA 👇
+const cambiarVista = async (nuevaVista) => {
   if (editandoId.value && nuevaVista !== vistaActual.value) {
-    const confirmar = confirm("Tienes una edición en curso. ¿Deseas salir y cancelar los cambios?");
-    if (confirmar) {
+    const result = await Swal.fire({
+      title: 'Edición en curso',
+      text: "Si cambias de pestaña se perderán los cambios no guardados. ¿Deseas salir?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3498db',
+      cancelButtonColor: '#95a5a6',
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Quedarme aquí'
+    });
+
+    if (result.isConfirmed) {
       cancelarEdicion();
       vistaActual.value = nuevaVista;
     }
@@ -261,7 +280,6 @@ const cambiarVista = (nuevaVista) => {
   }
 };
 
-// Generar PDF desde el historial (Pasamos ajustes.value como 3er parámetro)
 const verDocumento = (docGuardado) => {
   generarPDF(docGuardado.tipo, docGuardado, ajustes.value);
 };
@@ -275,7 +293,6 @@ const numeroCobroGenerado = ref('0');
 const cobroBase = { cliente: '', documento: '', nit: '', direccion: '', fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: '' };
 const cobro = ref(JSON.parse(JSON.stringify(cobroBase)));
 
-// OBSERVADOR MÁGICO (Ahora usa numeroALetras importado limpiamente)
 watch(() => cobro.value.monto, (nuevoMonto) => {
   if (nuevoMonto && nuevoMonto > 0) {
     cobro.value.montoLetras = numeroALetras(nuevoMonto);
@@ -310,18 +327,30 @@ onUnmounted(() => {
   window.removeEventListener('pwa-lista', revisarPWA);
 });
 
+// 👇 NUEVA ALERTA DE AJUSTES 👇
 const guardarAjustes = async () => {
   cargandoAjustes.value = true;
   try {
     await setDoc(doc(db, "configuracion", "general"), ajustes.value);
-    alert("¡Ajustes actualizados correctamente!");
-  } catch (error) { console.error(error); }
+    Swal.fire({
+      title: '¡Actualizado!',
+      text: 'Los ajustes se guardaron correctamente.',
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (error) { 
+    console.error(error); 
+    Swal.fire('Error', 'No se pudieron guardar los ajustes.', 'error');
+  }
   cargandoAjustes.value = false;
 };
 
-// === PROCESAR COTIZACIÓN ===
 const procesarCotizacion = async () => {
-  if (!cotizacion.value.cliente) return alert("Ingresa el cliente.");
+  if (!cotizacion.value.cliente) {
+    return Swal.fire('Faltan datos', 'Por favor, ingresa el nombre del cliente.', 'warning');
+  }
+  
   cargando.value = true;
   try {
     let numeroFinal = '';
@@ -365,16 +394,30 @@ const procesarCotizacion = async () => {
       await setDoc(doc(collection(db, "documentos_guardados"), `COT-${numeroFinal}`), datosCompletos);
     }
     
-    // 👇 Llamamos a generarPDF pasando los ajustes 👇
     generarPDF('cotizacion', datosCompletos, ajustes.value);
+    
+    // Alerta de éxito cortita y amigable
+    Swal.fire({
+      title: '¡Listo!',
+      text: 'Cotización procesada con éxito.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    
     cancelarEdicion();
-  } catch (error) { console.error(error); alert("Error al guardar."); }
+  } catch (error) { 
+    console.error(error); 
+    Swal.fire('Error', 'Hubo un problema al guardar la cotización.', 'error');
+  }
   cargando.value = false;
 };
 
-// === PROCESAR COBRO ===
 const procesarCobro = async () => {
-  if (!cobro.value.cliente || !cobro.value.monto) return alert("Llena los campos requeridos.");
+  if (!cobro.value.cliente || !cobro.value.monto) {
+    return Swal.fire('Faltan datos', 'Asegúrate de llenar el cliente y el monto.', 'warning');
+  }
+
   cargando.value = true;
   try {
     let numeroFinal = '';
@@ -414,10 +457,21 @@ const procesarCobro = async () => {
       await setDoc(doc(collection(db, "documentos_guardados"), `COB-${numeroFinal}`), datosCompletosCobro);
     }
     
-    // 👇 Llamamos a generarPDF pasando los ajustes 👇
     generarPDF('cobro', datosCompletosCobro, ajustes.value);
+    
+    Swal.fire({
+      title: '¡Listo!',
+      text: 'Cuenta de cobro procesada con éxito.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
     cancelarEdicion();
-  } catch (error) { console.error(error); alert("Error al guardar cobro."); }
+  } catch (error) { 
+    console.error(error); 
+    Swal.fire('Error', 'Hubo un problema al guardar el cobro.', 'error');
+  }
   cargando.value = false;
 };
 

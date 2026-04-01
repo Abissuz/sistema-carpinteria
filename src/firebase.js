@@ -1,9 +1,9 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+// 👇 1. Agrega "enableMultiTabIndexedDbPersistence" a tu importación
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 
-// Llamamos a las variables desde el archivo .env
-const firebaseConfig = {
+  const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -12,9 +12,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Inicializamos Firebase
 const app = initializeApp(firebaseConfig);
-
-// Exportamos la Base de Datos y la Autenticación
-export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+
+// 👇 2. Agrega este bloque al final de tu archivo 👇
+enableMultiTabIndexedDbPersistence(db)
+  .catch((err) => {
+    if (err.code == 'failed-precondition') {
+      console.warn("Múltiples pestañas abiertas, persistencia offline solo funciona en una a la vez.");
+    } else if (err.code == 'unimplemented') {
+      console.warn("El navegador no soporta persistencia offline.");
+    }
+  });
