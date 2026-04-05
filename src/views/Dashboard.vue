@@ -74,7 +74,7 @@
           <input v-model="cobro.monto" type="number" placeholder="Monto en números (Ej: 1900000)" required />
           <input v-model="cobro.montoLetras" placeholder="Monto en letras (Se llena solo...)" required readonly />
         </div>
-        <textarea v-model="cobro.concepto" placeholder="POR CONCEPTO DE: (Ej: PAGO CONTRATO CUYO OBJETO ES...)" class="textarea-cobro" required></textarea>
+        <textarea v-model="cobro.concepto" placeholder="POR CONCEPTO DE: (Ej: PAGO CONTRATO CUYO OBJETO ES...)" class="textarea-cobro text-P0" required></textarea>
         
         <div class="acciones-form">
           <button v-if="editandoId" @click="cancelarEdicion" class="btn-cancelar">
@@ -90,7 +90,7 @@
     <main v-if="vistaActual === 'historial'" class="card-formulario">
       <div class="header-historial">
         <h3>Explorador de Documentos</h3>
-        <input v-model="busqueda" type="text" placeholder="🔍 Buscar por cliente o número..." class="input-buscador" />
+        <input v-model="busqueda" type="text" placeholder="🔍 Buscar por cliente o número..." class="input-buscador text-P0" />
       </div>
       
       <div class="tabla-responsive">
@@ -143,11 +143,12 @@
           <input v-model="ajustes.condicionesPago" />
 
           <label class="bold mt-10">Forma de pago (Datos Bancarios):</label>
-          <textarea v-model="ajustes.formaPago" rows="3" style="width: 100%; font-family: Arial; padding: 10px;"></textarea>
+          <textarea v-model="ajustes.formaPago" rows="3" style="width: 100%; font-family: Arial; padding: 10px; box-sizing: border-box;"></textarea>
 
           <label class="bold mt-10">Garantía:</label>
           <input v-model="ajustes.garantia" />
         </div>
+        <div class="acciones-form"></div>
         <button @click="guardarAjustes" class="btn-guardar" :disabled="cargandoAjustes">
           {{ cargandoAjustes ? 'Guardando...' : 'Guardar Ajustes' }}
         </button>
@@ -488,9 +489,13 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 }
 
 .dashboard-container { 
-  max-width: 900px; 
-  margin: 30px auto; 
-  padding: 0 20px; 
+    /* max-width: 900px; */
+    display: flex;
+    /* margin: 30px; */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }
 
 /* BANNER PWA */
@@ -522,9 +527,15 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 }
 
 .header-nav { 
-  display: flex; justify-content: space-between; align-items: center; 
-  margin-bottom: 30px; background: white; padding: 15px 25px;
-  border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: white;
+    width: 80%;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .header-nav h2 { margin: 0; color: #8b4513; font-weight: 800; }
@@ -547,8 +558,13 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 }
 
 .card-formulario { 
-  background: white; padding: 35px; border-radius: 12px; 
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: relative; z-index: 2; 
+    background: white;
+    padding: 35px;
+    width: 65%;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 2;
 }
 .card-formulario h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 25px; }
 
@@ -571,7 +587,9 @@ input[readonly] { background-color: #e2dcd0; color: #7f8c8d; cursor: not-allowed
 input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
 
 .textarea-cobro { width: 100%; height: 100px; margin-top: 15px; resize: vertical; }
-
+.text-P0{
+  box-sizing: border-box;
+}
 .fila-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
 .input-cant { width: 80px; } .input-desc { flex-grow: 1; } .input-valor { width: 140px; }
 
@@ -586,7 +604,7 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
   color: white; border: none; padding: 18px 20px; border-radius: 8px; 
   cursor: pointer; flex-grow: 1; font-size: 18px; font-weight: bold; transition: 0.3s; 
 }
-.btn-guardar { background: linear-gradient(135deg, #d35400, #e67e22); box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3); } 
+.btn-guardar { background: linear-gradient(135deg, #d35400, #e67e22); box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3); margin-top: 10px; } 
 .btn-guardar:hover { background: linear-gradient(135deg, #e67e22, #d35400); transform: translateY(-2px); }
 .btn-guardar-cobro { background: linear-gradient(135deg, #27ae60, #2ecc71); box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); }
 .btn-guardar-cobro:hover { background: linear-gradient(135deg, #2ecc71, #27ae60); transform: translateY(-2px); }
