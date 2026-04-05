@@ -481,11 +481,19 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 
 <style scoped>
 /* ESTILOS WEB PRINCIPALES */
-:global(body) {
-  background-color: #f4f1ea; 
+:global(html), :global(body) {
+  background-color: #f4f1ea; /* Aplicamos el color al fondo absoluto */
+  min-height: 100vh; /* Obliga a que siempre cubra el 100% de la pantalla */
   color: #2c3e50;
   margin: 0;
+  padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:global(#app) {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-container { 
