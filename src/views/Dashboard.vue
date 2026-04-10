@@ -61,7 +61,7 @@
       </section>
 
       <section class="seccion-total">
-        <h3>Total Presupuesto: $ {{ formatearMoneda(calcularTotal()) }}</h3>
+        <h3>Total: $ {{ formatearMoneda(calcularTotal()) }}</h3>
         <textarea v-model="cotizacion.observaciones" placeholder="OBSERVACIONES..."></textarea>
         
         <div class="acciones-form">
