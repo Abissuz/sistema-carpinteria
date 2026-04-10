@@ -7,15 +7,29 @@
     </div>
 
     <header class="header-nav">
-      <h2>🔨 Sagrada Familia - Sistema</h2>
-      <div style="display: flex; gap: 10px;">
-        <button @click="cerrarSesion" class="btn-salir">Cerrar Sesión</button>
-      </div>
-    </header>
+  
+  <div class="brand">
+    <img src="/logo_sagrada.png" alt="Logo" class="logo-header">
+    <h2>Sagrada Familia</h2>
+  </div>
+
+  <div class="header-actions">
+    <button @click="cerrarSesion" class="btn-salir">
+      <span class="icono-salir">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </span>
+      <span class="texto-salir">Cerrar Sesión</span>
+    </button>
+  </div>
+</header>
 
     <div class="tabs">
       <button :class="{ active: vistaActual === 'crear' }" @click="cambiarVista('crear')">Cotización</button>
-      <button :class="{ active: vistaActual === 'cobro' }" @click="cambiarVista('cobro')">Cuenta de Cobro</button>
+      <button :class="{ active: vistaActual === 'cobro' }" @click="cambiarVista('cobro')">Cobro</button>
       <button :class="{ active: vistaActual === 'historial' }" @click="cambiarVista('historial')">Historial</button>
       <button :class="{ active: vistaActual === 'ajustes' }" @click="cambiarVista('ajustes')">Ajustes</button>
     </div>
@@ -533,25 +547,67 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
+/* Contenedor principal del Header */
 .header-nav { 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    background: white;
-    width: 80%;
-    padding: 15px 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  display: flex; 
+  justify-content: space-between; /* Empuja la marca a la izq y el botón a la der */
+  align-items: center; /* Centra todo verticalmente */
+  background: white; 
+  width: 90%;
+  padding: 15px 25px;
+  border-radius: 12px; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  margin-bottom: 30px;
 }
 
-.header-nav h2 { margin: 0; color: #8b4513; font-weight: 800; }
+/* El grupo del Logo y el Título */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Espacio exacto entre el dibujito y las letras */
+}
 
+/* Controlamos el tamaño del logo para que no explote la pantalla */
+.logo-header {
+  height: 70px; /* Si lo ves muy chico, súbelo a 50px */
+  width: auto;
+  object-fit: contain;
+}
+
+.brand h2 { 
+  margin: 0; 
+  color: #8b4513; 
+  font-weight: 800; 
+  font-size: 22px;
+}
+
+/* Estilo del botón en computadoras (Muestra ícono y texto) */
 .btn-salir { 
-  background: #ff4757; color: white; border: none; padding: 10px 20px; 
-  border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; 
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Separación entre el ícono y el texto */
+  background: #ff4757; 
+  color: white; 
+  border: none; 
+  padding: 10px 20px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: bold; 
+  transition: 0.3s; 
 }
+
+.btn-salir:hover { 
+  background: #ff6b81; 
+  transform: scale(1.05); 
+}
+
+/* El ícono está centrado en su espacio */
+.icono-salir {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-salir:hover { background: #ff6b81; transform: scale(1.05); }
 
 .tabs { display: flex; gap: 5px; margin-bottom: -10px; position: relative; z-index: 1; padding: 0 10px; }
@@ -569,6 +625,7 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
     background: white;
     padding: 35px;
     width: 65%;
+    min-width: 455px;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     position: relative;
@@ -648,4 +705,99 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
 .btn-ver:hover { background: #e67e22; transform: translateY(-1px); }
 .btn-borrar:hover { background: #ff6b81; transform: translateY(-1px); }
 .btn-editar:hover { background: #2980b9; transform: translateY(-1px); }
+  @media (max-width: 784px) {
+  .fila-item { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 10px; 
+    margin-bottom: 15px; 
+    align-items: center; 
+    background: #fdfcf9; 
+  padding: 12px; 
+  border-radius: 8px;
+  border: 1px solid #e2dcd0;
+  }
+
+  /* --- PRIMERA LÍNEA --- */
+  .input-cant { 
+    order: 1; /* Va primero */
+    width: 70px; /* Tamaño fijo pequeñito */
+  } 
+  
+  .input-valor {
+    order: 2; /* Va segundo */
+    flex-grow: 1; /* Esto le dice: "Ocupa todo el espacio que sobre en esta línea" */
+    width: auto;
+  }
+
+  .btn-eliminar {
+    order: 3; /* Va tercero (al final de la primera línea) */
+  }
+
+  /* --- SEGUNDA LÍNEA --- */
+  .input-desc { 
+    order: 4; /* Lo mandamos al final de todo */
+    width: 100%; /* Obligamos a que ocupe todo el ancho él solo */
+    margin-top: 5px; /* Un respirito para separarlo de la línea de arriba */
+  } 
+}
+@media (max-width: 580px) {
+  .card-formulario {
+    min-width: unset;
+    width: 95%;
+    box-sizing: border-box;
+  }
+
+  .texto-salir {
+    display: none; /* Escondemos el texto "Cerrar Sesión" */
+  }
+  
+  .btn-salir {
+    padding: 10px 12px; /* Reducimos el botón para que quede cuadradito abrazando al ícono */
+  }
+
+.header-nav {
+    width: 100%;
+    box-sizing: border-box;
+}
+  /* 🔥 OPCIÓN 2: BARRA INFERIOR ESTILO APP NATIVA 🔥 */
+  .tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #e2dcd0; /* Mismo fondo de las pestañas inactivas */
+    margin: 0;
+    padding: 5px;
+    gap: 2px;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.1); /* Sombra hacia arriba */
+    z-index: 1000; /* Para que flote por encima de todo */
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .tabs button {
+    flex: 1; /* Todos los botones miden exactamente lo mismo */
+    border-radius: 8px; /* Bordes redondeados chiquitos */
+    padding: 12px 2px;
+    font-size: 11px; /* Letra más pequeña para que quepan */
+    white-space: nowrap; /* Evita que el texto se parta a la mitad */
+  }
+
+  .tabs button.active {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Importante: Le damos un margen inferior al contenedor principal 
+     para que el formulario no quede escondido detrás de la nueva barra */
+  .dashboard-container {
+    padding-bottom: 70px;
+  }
+}
+@media (max-width: 390px) {
+  .brand h2{
+    display: none;
+  }
+}
 </style>
