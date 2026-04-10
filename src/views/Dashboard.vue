@@ -28,10 +28,25 @@
 </header>
 
     <div class="tabs">
-      <button :class="{ active: vistaActual === 'crear' }" @click="cambiarVista('crear')">Cotización</button>
-      <button :class="{ active: vistaActual === 'cobro' }" @click="cambiarVista('cobro')">Cobro</button>
-      <button :class="{ active: vistaActual === 'historial' }" @click="cambiarVista('historial')">Historial</button>
-      <button :class="{ active: vistaActual === 'ajustes' }" @click="cambiarVista('ajustes')">Ajustes</button>
+      <button :class="{ active: vistaActual === 'crear' }" @click="cambiarVista('crear')">
+        <img src="/precio.png" class="icono-tab" alt="Cotización">
+        <span class="texto-tab">Cotización</span>
+      </button>
+      
+      <button :class="{ active: vistaActual === 'cobro' }" @click="cambiarVista('cobro')">
+        <img src="/cobro.png" class="icono-tab" alt="Cobro">
+        <span class="texto-tab">Cuenta de Cobro</span>
+      </button>
+      
+      <button :class="{ active: vistaActual === 'historial' }" @click="cambiarVista('historial')">
+        <img src="/historial.png" class="icono-tab" alt="historial">
+        <span class="texto-tab">Historial</span>
+      </button>
+      
+      <button :class="{ active: vistaActual === 'ajustes' }" @click="cambiarVista('ajustes')">
+        <img src="/ajuste.png" class="icono-tab" alt="ajuste">
+        <span class="texto-tab">Ajustes</span>
+      </button>
     </div>
 
     <main v-if="vistaActual === 'crear'" class="card-formulario">
@@ -610,17 +625,28 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 
 .btn-salir:hover { background: #ff6b81; transform: scale(1.05); }
 
-.tabs { display: flex; gap: 5px; margin-bottom: -10px; position: relative; z-index: 1; padding: 0 10px; }
+.tabs { display: flex; gap: 5px; margin-bottom: -10px; position: relative; z-index: 1; padding: 0 10px; 
+  align-items: center;
+  justify-content: center;
+}
 .tabs button { 
   padding: 15px 25px; border: none; background: #e2dcd0; color: #666; 
   cursor: pointer; border-radius: 12px 12px 0 0; font-weight: bold; 
   font-size: 15px; transition: 0.3s; 
+  align-items: center;
+  justify-content: center;
+  display: flex;
 }
 .tabs button:hover { background: #d4ccb9; }
 .tabs button.active { 
-  background: white; color: #d35400; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+  background: white; color: #d35400;
 }
-
+.icono-tab {
+  width: 30px;
+  height: auto;
+  display: none; 
+  transition: filter 0.3s ease;
+}
 .card-formulario { 
     background: white;
     padding: 35px;
@@ -761,38 +787,60 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
     box-sizing: border-box;
 }
   /* 🔥 OPCIÓN 2: BARRA INFERIOR ESTILO APP NATIVA 🔥 */
-  .tabs {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #e2dcd0; /* Mismo fondo de las pestañas inactivas */
-    margin: 0;
-    padding: 5px;
-    gap: 2px;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.1); /* Sombra hacia arriba */
-    z-index: 1000; /* Para que flote por encima de todo */
-    display: flex;
-    justify-content: space-between;
-  }
+    .tabs {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #fff;
+        border: solid 1px #c0c0c0d1;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        box-sizing: border-box;
+        padding: 5px;
+        gap: 2px;
+        z-index: 1000;
+        display: flex;
+        justify-content: space-between;
+    }
 
   .tabs button {
     flex: 1; /* Todos los botones miden exactamente lo mismo */
-    border-radius: 8px; /* Bordes redondeados chiquitos */
-    padding: 12px 2px;
-    font-size: 11px; /* Letra más pequeña para que quepan */
     white-space: nowrap; /* Evita que el texto se parta a la mitad */
+    border: none;
+    background: #FFF;
+    color: #b4b1b1bf;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    transition: 0.3s;
+    align-items: center;
+    justify-content: center;
+    display: flex;
   }
 
-  .tabs button.active {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  .tabs button.active .icono-tab{
+    filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
   }
 
   /* Importante: Le damos un margen inferior al contenedor principal 
      para que el formulario no quede escondido detrás de la nueva barra */
   .dashboard-container {
     padding-bottom: 70px;
+  }
+  .tabs .texto-tab {
+    display: none; 
+  }
+  
+  /* Mostramos los íconos de las dos primeras pestañas */
+  .icono-tab {
+    display: block;
+    filter: invert(0%) opacity(60%);
+  }
+
+  /* Ajustamos un poco el relleno para que el ícono quede bien centrado */
+  .tabs button {
+    padding: 10px;
   }
 }
 @media (max-width: 390px) {
