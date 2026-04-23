@@ -88,7 +88,7 @@
 
       <section class="seccion-total">
         <h3>Total: $ {{ formatearMoneda(calcularTotal()) }}</h3>
-        <textarea v-model="cotizacion.observaciones" placeholder="OBSERVACIONES..."></textarea>
+        <textarea v-model="cotizacion.observaciones" placeholder="OBSERVACIONES..." class="obse"></textarea>
         
         <div class="acciones-form">
           <button v-if="editandoId" @click="cancelarEdicion" class="btn-cancelar">
@@ -129,44 +129,57 @@
 
     <main v-if="vistaActual === 'historial'" class="card-formulario">
       <div class="header-historial">
-        <h3>Explorador de Documentos</h3>
-        <input v-model="busqueda" type="text" placeholder="🔍 Buscar por cliente o número..." class="input-buscador text-P0" />
-      </div>
+  <input type="text" v-model="busqueda" placeholder="Buscar por cliente o número..." class="input-buscador">
+  
+  <div class="filtros-tipo">
+    <button :class="{ activo: filtroTipo === 'todos' }" @click="filtroTipo = 'todos'">Todos</button>
+    <button :class="{ activo: filtroTipo === 'cotizacion' }" @click="filtroTipo = 'cotizacion'">Cotización</button>
+    <button :class="{ activo: filtroTipo === 'cobro' }" @click="filtroTipo = 'cobro'">Cobro</button>
+  </div>
+</div>
       
       <div class="tabla-responsive">
-        <table class="tabla-historial">
-          <thead>
-            <tr>
-              <th>Tipo / Nº</th>
-              <th>Cliente</th>
-              <th>Total</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="documento in historialFiltrado" :key="documento.id">
-              <td class="bold">
-                <span :class="documento.tipo === 'cobro' ? 'badge-cobro' : 'badge-cot'">
-                  {{ documento.tipo === 'cobro' ? 'COBRO' : 'COT' }}
-                </span>
-                {{ documento.numero }}
-              </td>
-              <td>{{ documento.cliente }}</td>
-              <td>$ {{ formatearMoneda(documento.total) }}</td>
-              <td>{{ documento.fechaCreacionStr || 'N/A' }}</td>
-              <td class="acciones-celda">
-                <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar">📄</button>
-                <button @click="editarDocumento(documento)" class="btn-editar" title="Editar">✏️</button>
-                <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar">🗑️</button>
-              </td>
-            </tr>
-            <tr v-if="historialFiltrado.length === 0">
-              <td colspan="5" class="text-center">No se encontraron documentos.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  <table class="tabla-historial">
+    <thead>
+      <tr>
+        <th>Tipo / Nº</th>
+        <th>Cliente</th>
+        <th class="text-right">Total</th> 
+        <th class="text-right">Fecha</th>
+        <th class="text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="documento in historialFiltrado" :key="documento.id">
+        <td data-label="Tipo / Nº" class="bold">
+          <span :class="documento.tipo === 'cobro' ? 'badge-cobro' : 'badge-cot'">
+            {{ documento.tipo === 'cobro' ? 'COBRO' : 'COT' }}
+          </span>
+          #{{ documento.numero }}
+        </td>
+        
+        <td data-label="Cliente">{{ documento.cliente }}</td>
+        
+        <td data-label="Total" class="text-right bold">
+          $ {{ formatearMoneda(documento.total) }}
+        </td>
+        
+        <td data-label="Fecha" class="text-right">
+          {{ documento.fechaCreacionStr || 'N/A' }}
+        </td>
+        
+        <td data-label="Acciones" class="acciones-celda text-center">
+          <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar">📄</button>
+          <button @click="editarDocumento(documento)" class="btn-editar" title="Editar">✏️</button>
+          <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar">🗑️</button>
+        </td>
+      </tr>
+      <tr v-if="historialFiltrado.length === 0">
+        <td colspan="5" class="text-center mensaje-vacio">No se encontraron documentos en el historial.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
     </main>
 
     <main v-if="vistaActual === 'ajustes'" class="card-formulario">
@@ -215,6 +228,9 @@ const vistaActual = ref('crear');
 const historial = ref([]);
 const busqueda = ref(''); 
 
+// 🔥 NUEVO: Variable para saber qué botón de filtro está activo 🔥
+const filtroTipo = ref('todos');
+
 const editandoId = ref(null);
 
 const deferredPrompt = ref(window.deferredPWA || null);
@@ -246,13 +262,23 @@ const ajustes = ref({
   garantia: '02 años por defectos de fabricación. Herrajes 1 mes.'
 });
 
+// 🔥 ACTUALIZADO: Computed property con doble validación (Texto + Tipo) 🔥
 const historialFiltrado = computed(() => {
-  if (!busqueda.value) return historial.value;
-  const termino = busqueda.value.toLowerCase();
-  return historial.value.filter(doc => 
-    doc.cliente?.toLowerCase().includes(termino) || 
-    doc.numero?.toLowerCase().includes(termino)
-  );
+  return historial.value.filter(doc => {
+    
+    // A) Validación 1: ¿Coincide con la barra de búsqueda?
+    const termino = busqueda.value.toLowerCase();
+    const coincideTexto = !termino || 
+                          doc.cliente?.toLowerCase().includes(termino) || 
+                          doc.numero?.toString().toLowerCase().includes(termino);
+    
+    // B) Validación 2: ¿Coincide con el botón seleccionado?
+    // Si el filtro es 'todos', siempre da true. Si no, compara el tipo del doc.
+    const coincideTipo = filtroTipo.value === 'todos' || doc.tipo === filtroTipo.value;
+
+    // Retorna el documento solo si pasa ambas pruebas lógicas
+    return coincideTexto && coincideTipo;
+  });
 });
 
 // 👇 NUEVA ALERTA PARA ELIMINAR 👇
@@ -530,12 +556,13 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 <style scoped>
 /* ESTILOS WEB PRINCIPALES */
 :global(html), :global(body) {
-  background-color: #f4f1ea; /* Aplicamos el color al fondo absoluto */
-  min-height: 100vh; /* Obliga a que siempre cubra el 100% de la pantalla */
+  background-color: #f4f1ea; 
+  min-height: 100vh; 
   color: #2c3e50;
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
 }
 
 :global(#app) {
@@ -545,9 +572,7 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 }
 
 .dashboard-container { 
-    /* max-width: 900px; */
     display: flex;
-    /* margin: 30px; */
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -564,15 +589,11 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 /* =========================================
    ANIMACIONES DEL BANNER (VUE TRANSITION)
    ========================================= */
-
-/* Le decimos cuánto dura la animación y cómo de suave es (ease-out frena suavemente al final) */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: all 0.6s ease-out; 
+  transition: all 0.2s ease-out; 
 }
 
-/* Estado ANTES de entrar y DESPUÉS de salir: 
-   Totalmente transparente (opacity 0) y movido 30px hacia arriba */
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   opacity: 0;
@@ -581,7 +602,7 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 
 /* BANNER PWA */
 .banner-pwa {
-position: fixed;
+  position: fixed;
     z-index: 3;
     top: 1%;
     background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -593,7 +614,6 @@ position: fixed;
     align-items: center;
     margin-bottom: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    animation: slideDown-7f773d42 0.5s ease-out;
 }
 
 .banner-pwa span { font-weight: 500; font-size: 15px; }
@@ -604,37 +624,35 @@ position: fixed;
   transition: 0.2s; white-space: nowrap; margin-left: 15px;
 }
 .btn-instalar-banner:hover { background: #26b962; transform: scale(1.05); }
+
 .btn-cerrar-banner{
       background-color: transparent;
     border: none;
 }
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+
 /* Contenedor principal del Header */
 .header-nav { 
   display: flex; 
-  justify-content: space-between; /* Empuja la marca a la izq y el botón a la der */
-  align-items: center; /* Centra todo verticalmente */
+  justify-content: space-between; 
+  align-items: center; 
   background: white; 
   width: 90%;
   padding: 15px 25px;
   border-radius: 12px; 
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   margin-bottom: 30px;
+  box-sizing: border-box;
 }
 
 /* El grupo del Logo y el Título */
 .brand {
   display: flex;
   align-items: center;
-  gap: 15px; /* Espacio exacto entre el dibujito y las letras */
+  gap: 15px; 
 }
 
-/* Controlamos el tamaño del logo para que no explote la pantalla */
 .logo-header {
-  height: 70px; /* Si lo ves muy chico, súbelo a 50px */
+  height: 70px; 
   width: auto;
   object-fit: contain;
 }
@@ -650,7 +668,7 @@ position: fixed;
 .btn-salir { 
   display: flex;
   align-items: center;
-  gap: 8px; /* Separación entre el ícono y el texto */
+  gap: 8px; 
   background: #ff4757; 
   color: white; 
   border: none; 
@@ -661,12 +679,6 @@ position: fixed;
   transition: 0.3s; 
 }
 
-.btn-salir:hover { 
-  background: #ff6b81; 
-  transform: scale(1.05); 
-}
-
-/* El ícono está centrado en su espacio */
 .icono-salir {
   display: flex;
   align-items: center;
@@ -678,6 +690,11 @@ position: fixed;
 .tabs { display: flex; gap: 5px; margin-bottom: -10px; position: relative; z-index: 1; padding: 0 10px; 
   align-items: center;
   justify-content: center;
+}
+.obse{
+      width: 100%;
+    height: auto;
+    box-sizing: border-box;
 }
 .tabs button { 
   padding: 15px 25px; border: none; background: #e2dcd0; color: #666; 
@@ -706,6 +723,7 @@ position: fixed;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     position: relative;
     z-index: 2;
+    box-sizing: border-box;
 }
 .card-formulario h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 25px; }
 
@@ -745,7 +763,7 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
   color: white; border: none; padding: 18px 20px; border-radius: 8px; 
   cursor: pointer; flex-grow: 1; font-size: 18px; font-weight: bold; transition: 0.3s; 
 }
-.btn-guardar { background: linear-gradient(135deg, #d35400, #e67e22); box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3); margin-top: 10px; } 
+.btn-guardar { background: linear-gradient(135deg, #d35400, #e67e22); box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3); } 
 .btn-guardar:hover { background: linear-gradient(135deg, #e67e22, #d35400); transform: translateY(-2px); }
 .btn-guardar-cobro { background: linear-gradient(135deg, #27ae60, #2ecc71); box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); }
 .btn-guardar-cobro:hover { background: linear-gradient(135deg, #2ecc71, #27ae60); transform: translateY(-2px); }
@@ -760,27 +778,139 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
 .mt-10 { margin-top: 10px; }
 .seccion-total h3 { font-size: 24px; color: #d35400; text-align: right; margin-bottom: 15px; border: none; }
 
-.header-historial { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
-.input-buscador { width: 100%; padding: 15px; border: 2px solid #e2dcd0; border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s; background: white; }
+.header-historial { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;}
+.input-buscador { width: 100%; padding: 15px; border: 2px solid #e2dcd0; border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s; background: white; box-sizing: border-box;}
 .input-buscador:focus { border-color: #d35400; box-shadow: 0 0 10px rgba(211, 84, 0, 0.1); }
 
-.tabla-responsive { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #e2dcd0; }
-.tabla-historial { width: 100%; border-collapse: collapse; background: white; }
-.tabla-historial th, .tabla-historial td { border-bottom: 1px solid #e2dcd0; padding: 15px; text-align: left; }
-.tabla-historial th { background: #f8f6f2; color: #8b4513; font-weight: bold; }
-.tabla-historial tr:hover { background: #fafafa; }
+/* =========================================
+   FILTROS DEL HISTORIAL (NUEVO)
+   ========================================= */
+.filtros-tipo {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto; 
+  padding-bottom: 5px; 
+}
 
-.badge-cot { background: #1e90ff; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; margin-right: 8px; font-weight: bold; }
-.badge-cobro { background: #2ed573; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; margin-right: 8px; font-weight: bold; }
+.filtros-tipo button {
+  padding: 8px 18px;
+  border: 1.5px solid #e2dcd0;
+  background: white;
+  color: #7f8c8d;
+  border-radius: 20px; 
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap; 
+}
 
-.acciones-celda { display: flex; gap: 8px; }
-.btn-ver { background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s;}
-.btn-borrar { background: #ff4757; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s;}
-.btn-editar { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s;}
+.filtros-tipo button:hover {
+  background: #f8f6f2;
+}
 
-.btn-ver:hover { background: #e67e22; transform: translateY(-1px); }
-.btn-borrar:hover { background: #ff6b81; transform: translateY(-1px); }
-.btn-editar:hover { background: #2980b9; transform: translateY(-1px); }
+.filtros-tipo button.activo {
+  background: #d35400; 
+  color: white;
+  border-color: #d35400;
+  box-shadow: 0 4px 10px rgba(211, 84, 0, 0.2);
+}
+
+/* =========================================
+   ESTILOS DE TABLA (COMPUTADORA / BASE)
+   ========================================= */
+.tabla-responsive { 
+  overflow-x: auto; 
+  margin-top: 20px; 
+  border-radius: 12px; 
+  border: 1px solid #e2dcd0; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
+}
+
+.tabla-historial { 
+  width: 100%; 
+  border-collapse: collapse; 
+  background: white; 
+}
+
+.tabla-historial th, 
+.tabla-historial td { 
+  border-bottom: 1px solid #f0f0f0; 
+  padding: 18px 20px; 
+  text-align: left; 
+  font-size: 15px;
+}
+
+/* Evitamos que el texto se rompa en múltiples líneas en columnas clave */
+.tabla-historial td:nth-child(1),
+.tabla-historial td:nth-child(3),
+.tabla-historial td:nth-child(4),
+.tabla-historial td.acciones-celda {
+  white-space: nowrap; 
+}
+
+.tabla-historial th { 
+  background: #fdfcf9; 
+  color: #8b4513; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.tabla-historial tr { transition: background-color 0.2s; }
+.tabla-historial tbody tr:hover { background: #fafafa; }
+
+/* CLASES DE UTILIDAD PARA ALINEACIÓN TABLA */
+.text-right { text-align: right !important; }
+.text-center { text-align: center !important; }
+.bold { font-weight: 600; }
+.mensaje-vacio { padding: 40px; color: #7f8c8d; font-style: italic; }
+
+.badge-cot { background: #1e90ff; color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; margin-right: 10px; font-weight: bold; letter-spacing: 0.5px; }
+.badge-cobro { background: #2ed573; color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; margin-right: 10px; font-weight: bold; letter-spacing: 0.5px; }
+
+/* 🔥 CORRECCIÓN: Botones de Acción (Sin romper el borde) 🔥 */
+.acciones-celda { 
+  text-align: center; 
+  white-space: nowrap; 
+}
+
+.btn-ver, .btn-editar, .btn-borrar {
+  background: #f4f1ea; 
+  color: #2c3e50; 
+  border: 1px solid #e2dcd0; 
+  padding: 8px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-size: 16px; 
+  transition: all 0.2s ease; 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 38px; 
+  height: 38px;
+  margin: 0 4px; /* Separación horizontal en lugar de gap */
+  vertical-align: middle;
+}
+
+.btn-ver:hover { background: #3498db; color: white; border-color: #3498db; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2); }
+.btn-editar:hover { background: #f39c12; color: white; border-color: #f39c12; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(243, 156, 18, 0.2); }
+.btn-borrar:hover { background: #ff4757; color: white; border-color: #ff4757; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2); }
+
+/* 🔥 AJUSTE PARA TABLETS Y PANTALLAS MEDIANAS (Entre 785px y 1024px) 🔥 */
+@media (max-width: 1024px) {
+  .card-formulario {
+    width: 95%; 
+    min-width: unset; 
+    padding: 25px 20px; 
+  }
+
+  .header-nav {
+    width: 95%; 
+  }
+}
+
   @media (max-width: 784px) {
   .fila-item { 
     display: flex; 
@@ -796,27 +926,49 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
 
   /* --- PRIMERA LÍNEA --- */
   .input-cant { 
-    order: 1; /* Va primero */
-    width: 70px; /* Tamaño fijo pequeñito */
+    order: 1; 
+    width: 70px; 
   } 
   
   .input-valor {
-    order: 2; /* Va segundo */
-    flex-grow: 1; /* Esto le dice: "Ocupa todo el espacio que sobre en esta línea" */
+    order: 2; 
+    flex-grow: 1; 
     width: auto;
   }
 
   .btn-eliminar {
-    order: 3; /* Va tercero (al final de la primera línea) */
+    order: 3; 
   }
 
   /* --- SEGUNDA LÍNEA --- */
   .input-desc { 
-    order: 4; /* Lo mandamos al final de todo */
-    width: 100%; /* Obligamos a que ocupe todo el ancho él solo */
-    margin-top: 5px; /* Un respirito para separarlo de la línea de arriba */
+    order: 4; 
+    width: 100%; 
+    margin-top: 5px; 
   } 
+  
+  /* 🔥 CONVERSIÓN DE TABLA A TARJETAS PARA CELULARES 🔥 */
+  .tabla-responsive { border: none; background: transparent; box-shadow: none; }
+  .tabla-historial thead { display: none; }
+  .tabla-historial, .tabla-historial tbody, .tabla-historial tr, .tabla-historial td { display: block; width: 100%; box-sizing: border-box; }
+  
+  .tabla-historial tr {
+    background: white; margin-bottom: 15px; border-radius: 12px; border: 1px solid #e2dcd0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); padding: 10px 15px;
+  }
+  
+  .tabla-historial td {
+    display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 10px 0; text-align: right;
+  }
+  
+  .tabla-historial td:last-child {
+    border-bottom: none; padding-bottom: 0; justify-content: center;
+  }
+  
+  .tabla-historial td::before {
+    content: attr(data-label); font-weight: bold; color: #8b4513; text-transform: uppercase; font-size: 11px; text-align: left;
+  }
 }
+
 @media (max-width: 580px) {
   .card-formulario {
     min-width: unset;
@@ -825,17 +977,18 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
   }
 
   .texto-salir {
-    display: none; /* Escondemos el texto "Cerrar Sesión" */
+    display: none; 
   }
   
   .btn-salir {
-    padding: 10px 12px; /* Reducimos el botón para que quede cuadradito abrazando al ícono */
+    padding: 10px 12px; 
   }
 
 .header-nav {
     width: 100%;
     box-sizing: border-box;
 }
+
   /* 🔥 OPCIÓN 2: BARRA INFERIOR ESTILO APP NATIVA 🔥 */
     .tabs {
         position: fixed;
@@ -855,8 +1008,8 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
     }
 
   .tabs button {
-    flex: 1; /* Todos los botones miden exactamente lo mismo */
-    white-space: nowrap; /* Evita que el texto se parta a la mitad */
+    flex: 1; 
+    white-space: nowrap; 
     border: none;
     background: #FFF;
     color: #b4b1b1bf;
@@ -871,32 +1024,27 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
 
 .tabs button.active .icono-tab {
   filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
-  /* Agrega una transición suave también aquí si no la tenías */
   transition: filter 0.3s ease;
 }
 
 .tabs button.active:nth-child(3) .icono-tab,
 .tabs button.active:nth-child(4) .icono-tab {
   filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(130%) contrast(101%); 
-  /* Juega con ese 130% hasta que el naranja se vea brillante y uniforme con los otros dos. 
-     Puedes probar con 120%, 140%, etc. */
 }
-  /* Importante: Le damos un margen inferior al contenedor principal 
-     para que el formulario no quede escondido detrás de la nueva barra */
+
   .dashboard-container {
     padding-bottom: 70px;
   }
+  
   .tabs .texto-tab {
     display: none; 
   }
   
-  /* Mostramos los íconos de las dos primeras pestañas */
   .icono-tab {
     display: block;
     filter: invert(0%) opacity(60%);
   }
 
-  /* Ajustamos un poco el relleno para que el ícono quede bien centrado */
   .tabs button {
     padding: 10px;
   }
