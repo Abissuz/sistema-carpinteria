@@ -1,10 +1,21 @@
 <template>
   <div class="dashboard-container">
     
-    <div v-if="deferredPrompt && !yaInstalado" class="banner-pwa">
-      <span>📲 Instala nuestra app en tu dispositivo para un acceso rápido y sin conexión.</span>
+<transition name="slide-fade">
+  <div v-if="deferredPrompt && !yaInstalado && !bannerOculto" class="banner-pwa">
+    <span>📲 Instala nuestra app en tu dispositivo para un acceso rápido y sin conexión.</span>
+    
+    <div class="banner-acciones">
       <button @click="instalarApp" class="btn-instalar-banner">Instalar Ahora</button>
+      <button @click="cerrarBanner" class="btn-cerrar-banner" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
+  </div>
+</transition>
 
     <header class="header-nav">
   
@@ -336,6 +347,14 @@ const eliminarItem = (index) => cotizacion.value.items.splice(index, 1);
 const calcularTotal = () => cotizacion.value.items.reduce((total, item) => total + (item.valor || 0), 0);
 const obtenerFechaActual = () => { const f = new Date(); return `${f.getDate()}/${f.getMonth() + 1}/${f.getFullYear()}`; };
 
+// Agrega esto junto a tus otras variables
+const bannerOculto = ref(false);
+
+// Función para cuando presionan la X
+const cerrarBanner = () => {
+  bannerOculto.value = true;
+};
+
 onMounted(async () => {
   window.addEventListener('pwa-lista', revisarPWA);
   revisarPWA();
@@ -535,18 +554,46 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
     width: 100%;
 }
 
+/* Mantiene el botón de instalar y la X juntos a la derecha */
+.banner-acciones {
+  display: flex;
+  align-items: center;
+  gap: 15px; 
+}
+
+/* =========================================
+   ANIMACIONES DEL BANNER (VUE TRANSITION)
+   ========================================= */
+
+/* Le decimos cuánto dura la animación y cómo de suave es (ease-out frena suavemente al final) */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.6s ease-out; 
+}
+
+/* Estado ANTES de entrar y DESPUÉS de salir: 
+   Totalmente transparente (opacity 0) y movido 30px hacia arriba */
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
 /* BANNER PWA */
 .banner-pwa {
-  background: linear-gradient(135deg, #2c3e50, #34495e);
-  color: white;
-  padding: 15px 20px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  animation: slideDown 0.5s ease-out;
+position: fixed;
+    z-index: 3;
+    top: 1%;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    animation: slideDown-7f773d42 0.5s ease-out;
 }
 
 .banner-pwa span { font-weight: 500; font-size: 15px; }
@@ -557,7 +604,10 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
   transition: 0.2s; white-space: nowrap; margin-left: 15px;
 }
 .btn-instalar-banner:hover { background: #26b962; transform: scale(1.05); }
-
+.btn-cerrar-banner{
+      background-color: transparent;
+    border: none;
+}
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -819,10 +869,18 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
     display: flex;
   }
 
-  .tabs button.active .icono-tab{
-    filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
-  }
+.tabs button.active .icono-tab {
+  filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
+  /* Agrega una transición suave también aquí si no la tenías */
+  transition: filter 0.3s ease;
+}
 
+.tabs button.active:nth-child(3) .icono-tab,
+.tabs button.active:nth-child(4) .icono-tab {
+  filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(130%) contrast(101%); 
+  /* Juega con ese 130% hasta que el naranja se vea brillante y uniforme con los otros dos. 
+     Puedes probar con 120%, 140%, etc. */
+}
   /* Importante: Le damos un margen inferior al contenedor principal 
      para que el formulario no quede escondido detrás de la nueva barra */
   .dashboard-container {
