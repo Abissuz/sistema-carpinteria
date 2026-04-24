@@ -215,7 +215,7 @@ import { useRouter } from 'vue-router';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { doc, runTransaction, collection, setDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, runTransaction, collection, setDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, getDoc, getDocs, where, limit } from 'firebase/firestore';
 
 // 👇 IMPORTAMOS SWEETALERT2 👇
 import Swal from 'sweetalert2';
@@ -273,10 +273,8 @@ const historialFiltrado = computed(() => {
                           doc.numero?.toString().toLowerCase().includes(termino);
     
     // B) Validación 2: ¿Coincide con el botón seleccionado?
-    // Si el filtro es 'todos', siempre da true. Si no, compara el tipo del doc.
     const coincideTipo = filtroTipo.value === 'todos' || doc.tipo === filtroTipo.value;
 
-    // Retorna el documento solo si pasa ambas pruebas lógicas
     return coincideTexto && coincideTipo;
   });
 });
@@ -324,7 +322,6 @@ const cancelarEdicion = () => {
   vistaActual.value = 'historial';
 };
 
-// 👇 NUEVA ALERTA PARA CAMBIO DE PESTAÑA 👇
 const cambiarVista = async (nuevaVista) => {
   if (editandoId.value && nuevaVista !== vistaActual.value) {
     const result = await Swal.fire({
@@ -353,12 +350,48 @@ const verDocumento = (docGuardado) => {
 
 const numeroGenerado = ref('0000-00');
 const fechaImpresion = ref('');
-const cotizacionBase = { cliente: '', documento: '', nit: '', direccion: '', torre: '', apto: '', barrio: '', contacto: '', observaciones: '', items: [{ cantidad: 1, descripcion: '', valor: null }] };
+
+// 🔥 NUEVO: Agregamos tipoDoc a las bases 🔥
+const cotizacionBase = { tipoDoc: 'CC', cliente: '', documento: '', nit: '', direccion: '', torre: '', apto: '', barrio: '', contacto: '', observaciones: '', items: [{ cantidad: 1, descripcion: '', valor: null }] };
 const cotizacion = ref(JSON.parse(JSON.stringify(cotizacionBase)));
 
 const numeroCobroGenerado = ref('0');
-const cobroBase = { cliente: '', documento: '', nit: '', direccion: '', fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: '' };
+const cobroBase = { tipoDoc: 'NIT', cliente: '', documento: '', nit: '', direccion: '', fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: '' };
 const cobro = ref(JSON.parse(JSON.stringify(cobroBase)));
+
+// 🔥 NUEVO: Función para autocompletar clientes buscando en Firestore 🔥
+const buscarCliente = async (tipoVista) => {
+  const docBuscar = tipoVista === 'cotizacion' ? cotizacion.value.documento : cobro.value.documento;
+  if (!docBuscar || docBuscar.length < 5) return; 
+
+  try {
+    const q = query(collection(db, "documentos_guardados"), where("documento", "==", docBuscar), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const datosAnteriores = querySnapshot.docs[0].data();
+      
+      if (tipoVista === 'cotizacion') {
+        cotizacion.value.cliente = datosAnteriores.cliente || '';
+        cotizacion.value.direccion = datosAnteriores.direccion || '';
+        cotizacion.value.torre = datosAnteriores.torre || '';
+        cotizacion.value.apto = datosAnteriores.apto || '';
+        cotizacion.value.barrio = datosAnteriores.barrio || '';
+        cotizacion.value.contacto = datosAnteriores.contacto || '';
+        if(datosAnteriores.tipoDoc) cotizacion.value.tipoDoc = datosAnteriores.tipoDoc;
+      } else {
+        cobro.value.cliente = datosAnteriores.cliente || '';
+        cobro.value.direccion = datosAnteriores.direccion || '';
+        if(datosAnteriores.tipoDoc) cobro.value.tipoDoc = datosAnteriores.tipoDoc;
+      }
+
+      const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 3000, timerProgressBar: true });
+      Toast.fire({ icon: "success", title: "Datos del cliente autocompletados" });
+    }
+  } catch (error) {
+    console.error("Error buscando cliente:", error);
+  }
+};
 
 watch(() => cobro.value.monto, (nuevoMonto) => {
   if (nuevoMonto && nuevoMonto > 0) {
@@ -373,10 +406,8 @@ const eliminarItem = (index) => cotizacion.value.items.splice(index, 1);
 const calcularTotal = () => cotizacion.value.items.reduce((total, item) => total + (item.valor || 0), 0);
 const obtenerFechaActual = () => { const f = new Date(); return `${f.getDate()}/${f.getMonth() + 1}/${f.getFullYear()}`; };
 
-// Agrega esto junto a tus otras variables
 const bannerOculto = ref(false);
 
-// Función para cuando presionan la X
 const cerrarBanner = () => {
   bannerOculto.value = true;
 };
@@ -402,7 +433,6 @@ onUnmounted(() => {
   window.removeEventListener('pwa-lista', revisarPWA);
 });
 
-// 👇 NUEVA ALERTA DE AJUSTES 👇
 const guardarAjustes = async () => {
   cargandoAjustes.value = true;
   try {
@@ -446,8 +476,10 @@ const procesarCotizacion = async () => {
       numeroFinal = cotizacion.value.numero; 
     }
     
+    // 🔥 NUEVO: Guardamos el tipoDoc en la base de datos 🔥
     const datosCompletos = {
       tipo: 'cotizacion',
+      tipoDoc: cotizacion.value.tipoDoc, 
       numero: numeroFinal,
       cliente: cotizacion.value.cliente,
       documento: cotizacion.value.documento,
@@ -471,7 +503,6 @@ const procesarCotizacion = async () => {
     
     generarPDF('cotizacion', datosCompletos, ajustes.value);
     
-    // Alerta de éxito cortita y amigable
     Swal.fire({
       title: '¡Listo!',
       text: 'Cotización procesada con éxito.',
@@ -511,8 +542,10 @@ const procesarCobro = async () => {
       numeroFinal = cobro.value.numero; 
     }
     
+    // 🔥 NUEVO: Guardamos el tipoDoc en la base de datos 🔥
     const datosCompletosCobro = {
       tipo: 'cobro',
+      tipoDoc: cobro.value.tipoDoc,
       numero: numeroFinal,
       cliente: cobro.value.cliente,
       documento: cobro.value.documento,
