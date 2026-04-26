@@ -64,9 +64,28 @@
       <h3>{{ editandoId ? '✏️ Editar Presupuesto Nº ' + cotizacion.numero : 'Crear Nuevo Presupuesto' }}</h3>
       <section class="seccion-form">
         <h4>1. Datos del Cliente</h4>
+        
+        <div class="fila-destacada">
+          <div>
+            <label>Documento de Identidad *</label>
+            <div class="input-group-fused">
+              <select v-model="cotizacion.tipoDoc" class="select-fused">
+                <option value="CC">C.C.</option>
+                <option value="NIT">NIT</option>
+                <option value="CE">C.E.</option>
+                <option value="PPT">PPT</option>
+              </select>
+              <input type="text" v-model="cotizacion.documento" @change="buscarCliente('cotizacion')" placeholder="Ej: 10203040..." class="input-fused">
+            </div>
+          </div>
+          
+          <div>
+            <label>Cliente / Empresa *</label>
+            <input v-model="cotizacion.cliente" placeholder="Ej: Camilo Santander" style="width: 100%; box-sizing: border-box;"/>
+          </div>
+        </div>
+
         <div class="grid-inputs">
-          <input v-model="cotizacion.cliente" placeholder="Cliente (Ej: Camilo Santander)" />
-          <input v-model="cotizacion.documento" placeholder="Documento / NIT" />
           <input v-model="cotizacion.direccion" placeholder="Dirección (Ej: Monterreale)" />
           <input v-model="cotizacion.torre" placeholder="Torre" />
           <input v-model="cotizacion.apto" placeholder="Apto (Ej: 801)" />
@@ -104,27 +123,34 @@
     <main v-if="vistaActual === 'cobro'" class="card-formulario">
       <h3>{{ editandoId ? '✏️ Editar Cuenta de Cobro Nº ' + cobro.numero : 'Generar Cuenta de Cobro' }}</h3>
       <section class="seccion-form">
+        <div class="fila-destacada">
+          <div>
+            <label>Identificación *</label>
+            <div class="input-group-fused">
+              <select v-model="cobro.tipoDoc" class="select-fused">
+                <option value="NIT">NIT</option>
+                <option value="CC">C.C.</option>
+                <option value="CE">C.E.</option>
+                <option value="PPT">PPT</option>
+              </select>
+              <input type="text" v-model="cobro.documento" @change="buscarCliente('cobro')" placeholder="Número..." class="input-fused" required>
+            </div>
+          </div>
+
+          <div>
+            <label>Cliente / Empresa *</label>
+            <input v-model="cobro.cliente" placeholder="Ej: Chistiner Santander" style="width: 100%; box-sizing: border-box;" required />
+          </div>
+        </div>
+
         <div class="grid-inputs-cobro">
-          <input v-model="cobro.cliente" placeholder="Nombre de quien debe (Ej: Chistiner Santander)" required />
-          <input v-model="cobro.documento" placeholder="Documento" required />
-          <input v-model="cobro.nit" placeholder="NIT" required />
           <input v-model="cobro.direccion" placeholder="Dirección del cliente" />
-          <input v-model="cobro.fechaCiudad" placeholder="Ciudad y Fecha (Ej: Bogotá 20 de febrero del 2026)" required />
+          <input v-model="cobro.fechaCiudad" placeholder="Ciudad y Fecha (Ej: Bogotá 20 de febrero)" required />
           
           <input v-model="cobro.monto" type="number" placeholder="Monto en números (Ej: 1900000)" required />
           <input v-model="cobro.montoLetras" placeholder="Monto en letras (Se llena solo...)" required readonly />
         </div>
-        <textarea v-model="cobro.concepto" placeholder="POR CONCEPTO DE: (Ej: PAGO CONTRATO CUYO OBJETO ES...)" class="textarea-cobro text-P0" required></textarea>
-        
-        <div class="acciones-form">
-          <button v-if="editandoId" @click="cancelarEdicion" class="btn-cancelar">
-            Cancelar Edición
-          </button>
-          <button @click="procesarCobro" class="btn-guardar-cobro" :disabled="cargando">
-            {{ cargando ? 'Guardando...' : (editandoId ? 'Actualizar Cobro' : 'Generar Cuenta de Cobro') }}
-          </button>
-        </div>
-      </section>
+        </section>
     </main>
 
     <main v-if="vistaActual === 'historial'" class="card-formulario">
@@ -764,6 +790,9 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 .seccion-form h4 { color: #8b4513; margin-bottom: 15px; }
 .grid-inputs, .grid-inputs-cobro { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
 
+/* =========================================
+   ESTILOS DE INPUTS GENERALES
+   ========================================= */
 input, textarea { 
   padding: 12px 15px; border: 1.5px solid #dcdde1; border-radius: 8px; 
   font-family: inherit; font-size: 15px; background-color: #fafafa; 
@@ -777,6 +806,83 @@ input:focus, textarea:focus {
 
 input[readonly] { background-color: #e2dcd0; color: #7f8c8d; cursor: not-allowed !important; border-color: #dcdde1; }
 input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
+
+/* =========================================
+   INPUTS FUSIONADOS (TIPO DOC + NUMERO)
+   ========================================= */
+
+/* 🔥 NUEVA DISTRIBUCIÓN DE ESPACIO 🔥 */
+.fila-destacada {
+  display: grid;
+  /* 1.2 partes para el documento, 2 partes para el nombre del cliente */
+  grid-template-columns: 1.2fr 2fr; 
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7f8c8d;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.input-group-fused {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.select-fused {
+  padding: 12px 10px;
+  border: 1.5px solid #dcdde1;
+  border-right: none; 
+  border-radius: 8px 0 0 8px; 
+  font-family: inherit;
+  font-size: 14px;
+  
+  /* 🔥 EL NUEVO ESTILO ELEGANTE 🔥 */
+  background-color: #fdfcf9; /* Fondo más clarito */
+  color: #d35400; /* Texto naranja corporativo */
+  font-weight: 800; /* Letra más gordita */
+  cursor: pointer;
+  outline: none;
+  min-width: 85px; /* Un poco más ancho */
+  
+  /* ESTO QUITA EL ESTILO FEO DE WINDOWS/MAC */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
+  /* DIBUJAMOS NUESTRA PROPIA FLECHA NARANJA SVG */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d35400' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center; /* Ubicamos la flecha a la derecha */
+  background-size: 14px;
+  padding-right: 30px; /* Hacemos espacio para que el texto no pise la flecha */
+}
+
+.input-fused {
+  flex-grow: 1; 
+  border-radius: 0 8px 8px 0; 
+}
+
+.select-fused:focus,
+.input-fused:focus {
+  border-color: #d35400;
+}
+.input-fused:focus {
+  border-left: 1.5px solid #d35400; 
+}
+
+/* Que se apilen uno sobre otro si están en el celular */
+@media (max-width: 784px) {
+  .fila-destacada {
+    grid-template-columns: 1fr;
+  }
+}
 
 .textarea-cobro { width: 100%; height: 100px; margin-top: 15px; resize: vertical; }
 .text-P0{
