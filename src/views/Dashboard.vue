@@ -69,12 +69,22 @@
           <div>
             <label>Documento de Identidad *</label>
             <div class="input-group-fused">
-              <select v-model="cotizacion.tipoDoc" class="select-fused">
-                <option value="CC">C.C.</option>
-                <option value="NIT">NIT</option>
-                <option value="CE">C.E.</option>
-                <option value="PPT">PPT</option>
-              </select>
+              
+              <div class="custom-select-wrapper" tabindex="0" @blur="setTimeout(() => dropdownCotizacionAbierto = false, 200)">
+                <div class="select-fused" @click="dropdownCotizacionAbierto = !dropdownCotizacionAbierto" :class="{ 'is-focus': dropdownCotizacionAbierto }">
+                  <span>{{ cotizacion.tipoDoc === 'CC' ? 'C.C.' : cotizacion.tipoDoc === 'CE' ? 'C.E.' : cotizacion.tipoDoc }}</span>
+                  <svg class="flecha-select" :class="{ 'rotada': dropdownCotizacionAbierto }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <transition name="slide-up-fade">
+                  <ul v-show="dropdownCotizacionAbierto" class="custom-options-list">
+                    <li @click="cotizacion.tipoDoc = 'NIT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'NIT' }">NIT</li>
+                    <li @click="cotizacion.tipoDoc = 'CC'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CC' }">C.C.</li>
+                    <li @click="cotizacion.tipoDoc = 'CE'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CE' }">C.E.</li>
+                    <li @click="cotizacion.tipoDoc = 'PPT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PPT' }">PPT</li>
+                  </ul>
+                </transition>
+              </div>
+              
               <input type="text" v-model="cotizacion.documento" @change="buscarCliente('cotizacion')" placeholder="Ej: 10203040..." class="input-fused">
             </div>
           </div>
@@ -127,12 +137,22 @@
           <div>
             <label>Identificación *</label>
             <div class="input-group-fused">
-              <select v-model="cobro.tipoDoc" class="select-fused">
-                <option value="NIT">NIT</option>
-                <option value="CC">C.C.</option>
-                <option value="CE">C.E.</option>
-                <option value="PPT">PPT</option>
-              </select>
+              
+              <div class="custom-select-wrapper" tabindex="0" @blur="setTimeout(() => dropdownCobroAbierto = false, 200)">
+                <div class="select-fused" @click="dropdownCobroAbierto = !dropdownCobroAbierto" :class="{ 'is-focus': dropdownCobroAbierto }">
+                  <span>{{ cobro.tipoDoc === 'CC' ? 'C.C.' : cobro.tipoDoc === 'CE' ? 'C.E.' : cobro.tipoDoc }}</span>
+                  <svg class="flecha-select" :class="{ 'rotada': dropdownCobroAbierto }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <transition name="slide-up-fade">
+                  <ul v-show="dropdownCobroAbierto" class="custom-options-list">
+                    <li @click="cobro.tipoDoc = 'NIT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'NIT' }">NIT</li>
+                    <li @click="cobro.tipoDoc = 'CC'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CC' }">C.C.</li>
+                    <li @click="cobro.tipoDoc = 'CE'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CE' }">C.E.</li>
+                    <li @click="cobro.tipoDoc = 'PPT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PPT' }">PPT</li>
+                  </ul>
+                </transition>
+              </div>
+
               <input type="text" v-model="cobro.documento" @change="buscarCliente('cobro')" placeholder="Número..." class="input-fused" required>
             </div>
           </div>
@@ -150,7 +170,18 @@
           <input v-model="cobro.monto" type="number" placeholder="Monto en números (Ej: 1900000)" required />
           <input v-model="cobro.montoLetras" placeholder="Monto en letras (Se llena solo...)" required readonly />
         </div>
-        </section>
+        
+        <textarea v-model="cobro.concepto" placeholder="POR CONCEPTO DE: (Ej: PAGO CONTRATO CUYO OBJETO ES...)" class="textarea-cobro text-P0" required></textarea>
+        
+        <div class="acciones-form">
+          <button v-if="editandoId" @click="cancelarEdicion" class="btn-cancelar">
+            Cancelar Edición
+          </button>
+          <button @click="procesarCobro" class="btn-guardar-cobro" :disabled="cargando">
+            {{ cargando ? 'Guardando...' : (editandoId ? 'Actualizar Cobro' : 'Generar Cuenta de Cobro') }}
+          </button>
+        </div>
+      </section>
     </main>
 
     <main v-if="vistaActual === 'historial'" class="card-formulario">
@@ -254,8 +285,12 @@ const vistaActual = ref('crear');
 const historial = ref([]);
 const busqueda = ref(''); 
 
-// 🔥 NUEVO: Variable para saber qué botón de filtro está activo 🔥
+// Variables para saber qué botón de filtro está activo
 const filtroTipo = ref('todos');
+
+// 🔥 NUEVO: Variables para controlar los Selects Personalizados 🔥
+const dropdownCotizacionAbierto = ref(false);
+const dropdownCobroAbierto = ref(false);
 
 const editandoId = ref(null);
 
@@ -288,24 +323,19 @@ const ajustes = ref({
   garantia: '02 años por defectos de fabricación. Herrajes 1 mes.'
 });
 
-// 🔥 ACTUALIZADO: Computed property con doble validación (Texto + Tipo) 🔥
 const historialFiltrado = computed(() => {
   return historial.value.filter(doc => {
-    
-    // A) Validación 1: ¿Coincide con la barra de búsqueda?
     const termino = busqueda.value.toLowerCase();
     const coincideTexto = !termino || 
                           doc.cliente?.toLowerCase().includes(termino) || 
                           doc.numero?.toString().toLowerCase().includes(termino);
     
-    // B) Validación 2: ¿Coincide con el botón seleccionado?
     const coincideTipo = filtroTipo.value === 'todos' || doc.tipo === filtroTipo.value;
 
     return coincideTexto && coincideTipo;
   });
 });
 
-// 👇 NUEVA ALERTA PARA ELIMINAR 👇
 const eliminarDocumento = async (id, numero) => {
   const result = await Swal.fire({
     title: '¿Estás seguro?',
@@ -377,7 +407,6 @@ const verDocumento = (docGuardado) => {
 const numeroGenerado = ref('0000-00');
 const fechaImpresion = ref('');
 
-// 🔥 NUEVO: Agregamos tipoDoc a las bases 🔥
 const cotizacionBase = { tipoDoc: 'CC', cliente: '', documento: '', nit: '', direccion: '', torre: '', apto: '', barrio: '', contacto: '', observaciones: '', items: [{ cantidad: 1, descripcion: '', valor: null }] };
 const cotizacion = ref(JSON.parse(JSON.stringify(cotizacionBase)));
 
@@ -385,7 +414,6 @@ const numeroCobroGenerado = ref('0');
 const cobroBase = { tipoDoc: 'NIT', cliente: '', documento: '', nit: '', direccion: '', fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: '' };
 const cobro = ref(JSON.parse(JSON.stringify(cobroBase)));
 
-// 🔥 NUEVO: Función para autocompletar clientes buscando en Firestore 🔥
 const buscarCliente = async (tipoVista) => {
   const docBuscar = tipoVista === 'cotizacion' ? cotizacion.value.documento : cobro.value.documento;
   if (!docBuscar || docBuscar.length < 5) return; 
@@ -502,7 +530,6 @@ const procesarCotizacion = async () => {
       numeroFinal = cotizacion.value.numero; 
     }
     
-    // 🔥 NUEVO: Guardamos el tipoDoc en la base de datos 🔥
     const datosCompletos = {
       tipo: 'cotizacion',
       tipoDoc: cotizacion.value.tipoDoc, 
@@ -568,7 +595,6 @@ const procesarCobro = async () => {
       numeroFinal = cobro.value.numero; 
     }
     
-    // 🔥 NUEVO: Guardamos el tipoDoc en la base de datos 🔥
     const datosCompletosCobro = {
       tipo: 'cobro',
       tipoDoc: cobro.value.tipoDoc,
@@ -662,21 +688,39 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 /* BANNER PWA */
 .banner-pwa {
   position: fixed;
-    z-index: 3;
-    top: 1%;
-    background: linear-gradient(135deg, #2c3e50, #34495e);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 3;
+  top: 1%;
+  /* Le damos un max-width para que no se pegue a los bordes en móviles */
+  max-width: 95%; 
+  left: 50%;
+  transform: translateX(-50%); /* Centrado perfecto */
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
-.banner-pwa span { font-weight: 500; font-size: 15px; }
+.banner-pwa span { 
+  font-weight: 500; 
+  font-size: 14px; /* Un poco más pequeño para que quepa mejor */
+  line-height: 1.4; /* Mejor lectura */
+  padding-right: 15px; /* Separación del botón */
+}
 
+/* Envolvemos el botón y la X */
+.banner-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px; 
+  flex-shrink: 0; /* CRÍTICO: Evita que los botones se aplasten */
+}
+
+/* Si la pantalla es muy pequeña (celular), cambiamos la dirección del banner */
 .btn-instalar-banner {
   background: #2ed573; color: white; border: none; padding: 10px 20px;
   border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;
@@ -808,13 +852,10 @@ input[readonly] { background-color: #e2dcd0; color: #7f8c8d; cursor: not-allowed
 input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
 
 /* =========================================
-   INPUTS FUSIONADOS (TIPO DOC + NUMERO)
+   SELECTOR PERSONALIZADO PREMIUM (FUSIONADO)
    ========================================= */
-
-/* 🔥 NUEVA DISTRIBUCIÓN DE ESPACIO 🔥 */
 .fila-destacada {
   display: grid;
-  /* 1.2 partes para el documento, 2 partes para el nombre del cliente */
   grid-template-columns: 1.2fr 2fr; 
   gap: 15px;
   margin-bottom: 15px;
@@ -835,33 +876,99 @@ label {
   width: 100%;
 }
 
+.custom-select-wrapper {
+  position: relative;
+  outline: none; /* Quita el borde azul de enfoque del navegador */
+}
+
 .select-fused {
-  padding: 12px 10px;
+  padding: 12px 10px 12px 15px; 
   border: 1.5px solid #dcdde1;
   border-right: none; 
   border-radius: 8px 0 0 8px; 
   font-family: inherit;
   font-size: 14px;
-  
-  /* 🔥 EL NUEVO ESTILO ELEGANTE 🔥 */
-  background-color: #fdfcf9; /* Fondo más clarito */
-  color: #d35400; /* Texto naranja corporativo */
-  font-weight: 800; /* Letra más gordita */
+  background-color: white; 
+  color: #8b4513; 
+  font-weight: 600; 
   cursor: pointer;
-  outline: none;
-  min-width: 85px; /* Un poco más ancho */
+  width: 90px;
+  transition: all 0.3s ease;
   
-  /* ESTO QUITA EL ESTILO FEO DE WINDOWS/MAC */
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  
-  /* DIBUJAMOS NUESTRA PROPIA FLECHA NARANJA SVG */
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d35400' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center; /* Ubicamos la flecha a la derecha */
-  background-size: 14px;
-  padding-right: 30px; /* Hacemos espacio para que el texto no pise la flecha */
+  /* Alineamos el texto y la flecha */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.flecha-select {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+/* La flecha gira cuando el menú está abierto */
+.flecha-select.rotada {
+  transform: rotate(180deg);
+}
+
+.select-fused:hover, .select-fused.is-focus {
+  background-color: #fdfcf9;
+  color: #d35400; 
+}
+
+/* Cuando el usuario hace clic en el contenedor, pintamos el borde */
+.custom-select-wrapper:focus .select-fused {
+  border-color: #d35400;
+}
+
+/* LA TARJETA FLOTANTE (EL MENÚ DESPLEGABLE) */
+.custom-options-list {
+  position: absolute;
+  top: calc(100% + 5px); /* Separado un poquito hacia abajo */
+  left: 0;
+  width: 110px;
+  background: white;
+  border: 1px solid #e2dcd0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Sombra elegante */
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+  z-index: 100; /* Asegura que flote sobre todo lo demás */
+  overflow: hidden;
+}
+
+.custom-options-list li {
+  padding: 10px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7f8c8d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-options-list li:hover {
+  background-color: #fdfcf9;
+  color: #d35400;
+}
+
+/* El elemento seleccionado */
+.custom-options-list li.active {
+  color: #d35400;
+  background-color: rgba(211, 84, 0, 0.05);
+  border-left: 3px solid #d35400; /* Una barrita naranja indicadora */
+}
+
+/* ANIMACIÓN DE APARICIÓN DEL MENÚ */
+.slide-up-fade-enter-active, .slide-up-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-up-fade-enter-from, .slide-up-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .input-fused {
@@ -869,11 +976,8 @@ label {
   border-radius: 0 8px 8px 0; 
 }
 
-.select-fused:focus,
 .input-fused:focus {
   border-color: #d35400;
-}
-.input-fused:focus {
   border-left: 1.5px solid #d35400; 
 }
 
@@ -883,6 +987,8 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================= */
 
 .textarea-cobro { width: 100%; height: 100px; margin-top: 15px; resize: vertical; }
 .text-P0{
@@ -1049,7 +1155,11 @@ label {
     width: 95%; 
   }
 }
-
+@media (max-width: 950px) {
+.banner-pwa[data-v-7f773d42] {
+  width: 90%;
+}
+}
   @media (max-width: 784px) {
   .fila-item { 
     display: flex; 
@@ -1187,7 +1297,22 @@ label {
   .tabs button {
     padding: 10px;
   }
+
+  .banner-pwa {
+    flex-direction: column; /* Apilamos el texto arriba y los botones abajo */
+    text-align: center;
+    gap: 15px;
+  }
+  .banner-pwa span {
+    padding-right: 0;
+  }
+  .btn-cerrar-banner {
+    position: absolute; /* Ponemos la X en la esquina superior derecha */
+    top: 5px;
+    right: 5px;
+  }
 }
+
 @media (max-width: 390px) {
   .brand h2{
     display: none;
