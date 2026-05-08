@@ -72,7 +72,7 @@
               
               <div class="custom-select-wrapper" tabindex="0" @blur="setTimeout(() => dropdownCotizacionAbierto = false, 200)">
                 <div class="select-fused" @click="dropdownCotizacionAbierto = !dropdownCotizacionAbierto" :class="{ 'is-focus': dropdownCotizacionAbierto }">
-                  <span>{{ cotizacion.tipoDoc === 'CC' ? 'C.C.' : cotizacion.tipoDoc === 'CE' ? 'C.E.' : cotizacion.tipoDoc }}</span>
+                  <span>{{ cotizacion.tipoDoc === 'CC' ? 'C.C.' : cotizacion.tipoDoc === 'CE' ? 'C.E.' : cotizacion.tipoDoc === 'PAS' ? 'PAS' : cotizacion.tipoDoc }}</span>
                   <svg class="flecha-select" :class="{ 'rotada': dropdownCotizacionAbierto }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
                 <transition name="slide-up-fade">
@@ -81,6 +81,7 @@
                     <li @click="cotizacion.tipoDoc = 'CC'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CC' }">C.C.</li>
                     <li @click="cotizacion.tipoDoc = 'CE'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CE' }">C.E.</li>
                     <li @click="cotizacion.tipoDoc = 'PPT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PPT' }">PPT</li>
+                    <li @click="cotizacion.tipoDoc = 'PAS'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PAS' }">PAS</li>
                   </ul>
                 </transition>
               </div>
@@ -140,7 +141,7 @@
               
               <div class="custom-select-wrapper" tabindex="0" @blur="setTimeout(() => dropdownCobroAbierto = false, 200)">
                 <div class="select-fused" @click="dropdownCobroAbierto = !dropdownCobroAbierto" :class="{ 'is-focus': dropdownCobroAbierto }">
-                  <span>{{ cobro.tipoDoc === 'CC' ? 'C.C.' : cobro.tipoDoc === 'CE' ? 'C.E.' : cobro.tipoDoc }}</span>
+                  <span>{{ cobro.tipoDoc === 'CC' ? 'C.C.' : cobro.tipoDoc === 'CE' ? 'C.E.' : cobro.tipoDoc === 'PAS' ? 'PAS' : cobro.tipoDoc }}</span>
                   <svg class="flecha-select" :class="{ 'rotada': dropdownCobroAbierto }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
                 <transition name="slide-up-fade">
@@ -149,6 +150,7 @@
                     <li @click="cobro.tipoDoc = 'CC'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CC' }">C.C.</li>
                     <li @click="cobro.tipoDoc = 'CE'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CE' }">C.E.</li>
                     <li @click="cobro.tipoDoc = 'PPT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PPT' }">PPT</li>
+                    <li @click="cobro.tipoDoc = 'PAS'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PAS' }">PAS</li>
                   </ul>
                 </transition>
               </div>
@@ -664,13 +666,6 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
     width: 100%;
 }
 
-/* Mantiene el botón de instalar y la X juntos a la derecha */
-.banner-acciones {
-  display: flex;
-  align-items: center;
-  gap: 15px; 
-}
-
 /* =========================================
    ANIMACIONES DEL BANNER (VUE TRANSITION)
    ========================================= */
@@ -690,10 +685,9 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
   position: fixed;
   z-index: 3;
   top: 1%;
-  /* Le damos un max-width para que no se pegue a los bordes en móviles */
   max-width: 95%; 
   left: 50%;
-  transform: translateX(-50%); /* Centrado perfecto */
+  transform: translateX(-50%); 
   background: linear-gradient(135deg, #2c3e50, #34495e);
   color: white;
   padding: 15px 20px;
@@ -707,20 +701,18 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 
 .banner-pwa span { 
   font-weight: 500; 
-  font-size: 14px; /* Un poco más pequeño para que quepa mejor */
-  line-height: 1.4; /* Mejor lectura */
-  padding-right: 15px; /* Separación del botón */
+  font-size: 14px; 
+  line-height: 1.4; 
+  padding-right: 15px; 
 }
 
-/* Envolvemos el botón y la X */
 .banner-acciones {
   display: flex;
   align-items: center;
   gap: 10px; 
-  flex-shrink: 0; /* CRÍTICO: Evita que los botones se aplasten */
+  flex-shrink: 0; 
 }
 
-/* Si la pantalla es muy pequeña (celular), cambiamos la dirección del banner */
 .btn-instalar-banner {
   background: #2ed573; color: white; border: none; padding: 10px 20px;
   border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;
@@ -832,15 +824,32 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 
 .seccion-form { margin-bottom: 30px; }
 .seccion-form h4 { color: #8b4513; margin-bottom: 15px; }
-.grid-inputs, .grid-inputs-cobro { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+
+/* 🔥 TRUCO MAGICO: min(100%, 220px) 🔥 */
+.grid-inputs, .grid-inputs-cobro { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); 
+  gap: 15px; 
+}
 
 /* =========================================
    ESTILOS DE INPUTS GENERALES
    ========================================= */
 input, textarea { 
-  padding: 12px 15px; border: 1.5px solid #dcdde1; border-radius: 8px; 
-  font-family: inherit; font-size: 15px; background-color: #fafafa; 
-  color: #2c3e50; cursor: text !important; caret-color: #d35400; color-scheme: light;
+  width: 100%; 
+  box-sizing: border-box; 
+  padding: 12px 15px; 
+  border: 1.5px solid #dcdde1; 
+  border-radius: 8px; 
+  font-family: inherit; 
+  font-size: 15px; 
+  background-color: #fafafa; 
+  color: #2c3e50; 
+  cursor: text !important; 
+  caret-color: #d35400; 
+  color-scheme: light;
+  /* CRÍTICO: Permitimos que se encojan hacia adentro */
+  min-width: 0 !important;
 }
 
 input:focus, textarea:focus { 
@@ -859,6 +868,13 @@ input[readonly]:focus { border-color: #dcdde1; box-shadow: none; }
   grid-template-columns: 1.2fr 2fr; 
   gap: 15px;
   margin-bottom: 15px;
+  width: 100%; 
+  box-sizing: border-box;
+}
+
+.fila-destacada > div {
+  min-width: 0;
+  width: 100%;
 }
 
 label {
@@ -874,11 +890,13 @@ label {
   display: flex;
   align-items: stretch;
   width: 100%;
+  box-sizing: border-box; 
 }
 
 .custom-select-wrapper {
   position: relative;
-  outline: none; /* Quita el borde azul de enfoque del navegador */
+  outline: none; 
+  flex-shrink: 0; 
 }
 
 .select-fused {
@@ -895,7 +913,6 @@ label {
   width: 90px;
   transition: all 0.3s ease;
   
-  /* Alineamos el texto y la flecha */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -909,7 +926,6 @@ label {
   transition: transform 0.3s ease;
 }
 
-/* La flecha gira cuando el menú está abierto */
 .flecha-select.rotada {
   transform: rotate(180deg);
 }
@@ -919,7 +935,6 @@ label {
   color: #d35400; 
 }
 
-/* Cuando el usuario hace clic en el contenedor, pintamos el borde */
 .custom-select-wrapper:focus .select-fused {
   border-color: #d35400;
 }
@@ -927,17 +942,17 @@ label {
 /* LA TARJETA FLOTANTE (EL MENÚ DESPLEGABLE) */
 .custom-options-list {
   position: absolute;
-  top: calc(100% + 5px); /* Separado un poquito hacia abajo */
+  top: calc(100% + 5px); 
   left: 0;
   width: 110px;
   background: white;
   border: 1px solid #e2dcd0;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Sombra elegante */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
   list-style: none;
   padding: 8px 0;
   margin: 0;
-  z-index: 100; /* Asegura que flote sobre todo lo demás */
+  z-index: 100; 
   overflow: hidden;
 }
 
@@ -955,14 +970,12 @@ label {
   color: #d35400;
 }
 
-/* El elemento seleccionado */
 .custom-options-list li.active {
   color: #d35400;
   background-color: rgba(211, 84, 0, 0.05);
-  border-left: 3px solid #d35400; /* Una barrita naranja indicadora */
+  border-left: 3px solid #d35400; 
 }
 
-/* ANIMACIÓN DE APARICIÓN DEL MENÚ */
 .slide-up-fade-enter-active, .slide-up-fade-leave-active {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -974,6 +987,8 @@ label {
 .input-fused {
   flex-grow: 1; 
   border-radius: 0 8px 8px 0; 
+  width: 0 !important; 
+  min-width: 0 !important;
 }
 
 .input-fused:focus {
@@ -981,21 +996,23 @@ label {
   border-left: 1.5px solid #d35400; 
 }
 
-/* Que se apilen uno sobre otro si están en el celular */
-@media (max-width: 784px) {
-  .fila-destacada {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ========================================= */
-
 .textarea-cobro { width: 100%; height: 100px; margin-top: 15px; resize: vertical; }
 .text-P0{
   box-sizing: border-box;
 }
-.fila-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
-.input-cant { width: 80px; } .input-desc { flex-grow: 1; } .input-valor { width: 140px; }
+
+/* =========================================
+   ESTILOS DE ITEM DE TRABAJO
+   ========================================= */
+.fila-item { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+  align-items: center; 
+}
+.input-cant { width: 80px; } 
+.input-desc { flex-grow: 1; } 
+.input-valor { width: 140px; }
 
 .btn-agregar, .btn-eliminar { color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
 .btn-agregar { background: #2ed573; margin-top: 10px;} .btn-agregar:hover { background: #26b962; }
@@ -1028,7 +1045,7 @@ label {
 .input-buscador:focus { border-color: #d35400; box-shadow: 0 0 10px rgba(211, 84, 0, 0.1); }
 
 /* =========================================
-   FILTROS DEL HISTORIAL (NUEVO)
+   FILTROS DEL HISTORIAL
    ========================================= */
 .filtros-tipo {
   display: flex;
@@ -1086,7 +1103,6 @@ label {
   font-size: 15px;
 }
 
-/* Evitamos que el texto se rompa en múltiples líneas en columnas clave */
 .tabla-historial td:nth-child(1),
 .tabla-historial td:nth-child(3),
 .tabla-historial td:nth-child(4),
@@ -1106,7 +1122,6 @@ label {
 .tabla-historial tr { transition: background-color 0.2s; }
 .tabla-historial tbody tr:hover { background: #fafafa; }
 
-/* CLASES DE UTILIDAD PARA ALINEACIÓN TABLA */
 .text-right { text-align: right !important; }
 .text-center { text-align: center !important; }
 .bold { font-weight: 600; }
@@ -1119,6 +1134,8 @@ label {
 .acciones-celda { 
   text-align: center; 
   white-space: nowrap; 
+  display: table-cell !important; 
+  vertical-align: middle;
 }
 
 .btn-ver, .btn-editar, .btn-borrar {
@@ -1135,16 +1152,16 @@ label {
   justify-content: center; 
   width: 38px; 
   height: 38px;
-  margin: 0 4px; /* Separación horizontal en lugar de gap */
-  vertical-align: middle;
+  margin: 0 4px; 
+  vertical-align: middle; 
 }
 
 .btn-ver:hover { background: #3498db; color: white; border-color: #3498db; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2); }
 .btn-editar:hover { background: #f39c12; color: white; border-color: #f39c12; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(243, 156, 18, 0.2); }
 .btn-borrar:hover { background: #ff4757; color: white; border-color: #ff4757; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2); }
 
-/* 🔥 AJUSTE PARA TABLETS Y PANTALLAS MEDIANAS (Entre 785px y 1024px) 🔥 */
-@media (max-width: 1024px) {
+/* 🔥 AJUSTES RESPONSIVOS 🔥 */
+@media (max-width: 1150px) {
   .card-formulario {
     width: 95%; 
     min-width: unset; 
@@ -1155,48 +1172,48 @@ label {
     width: 95%; 
   }
 }
+
 @media (max-width: 950px) {
 .banner-pwa[data-v-7f773d42] {
   width: 90%;
 }
 }
-  @media (max-width: 784px) {
-  .fila-item { 
-    display: flex; 
-    flex-wrap: wrap; 
-    gap: 10px; 
-    margin-bottom: 15px; 
-    align-items: center; 
+
+@media (max-width: 784px) {
+  .fila-destacada {
+    grid-template-columns: 1fr;
+  }
+
+  /* 🔥 LA CORRECCIÓN DE LAYOUT STAGGERED PARA MÓVILES 🔥 */
+  .fila-item {
+    flex-direction: column;
+    align-items: flex-start;
     background: #fdfcf9; 
-  padding: 12px; 
-  border-radius: 8px;
-  border: 1px solid #e2dcd0;
+    padding: 12px; 
+    border-radius: 8px;
+    border: 1px solid #e2dcd0;
   }
 
-  /* --- PRIMERA LÍNEA --- */
-  .input-cant { 
-    order: 1; 
-    width: 70px; 
-  } 
+  .fila-item input,
+  .fila-item textarea,
+  .fila-item button {
+    width: 100%;
+  }
+
+  .input-cant { order: 1; } 
+  .input-desc { order: 2; margin-top: 5px; } 
+  .input-valor { order: 3; }
   
-  .input-valor {
-    order: 2; 
-    flex-grow: 1; 
-    width: auto;
-  }
-
-  .btn-eliminar {
-    order: 3; 
-  }
-
-  /* --- SEGUNDA LÍNEA --- */
-  .input-desc { 
+  .btn-eliminar { 
     order: 4; 
     width: 100%; 
-    margin-top: 5px; 
-  } 
+    text-align: center;
+    margin-top: 10px; 
+    padding: 12px; 
+    margin-left: 0; 
+    margin-right: 0;
+  }
   
-  /* 🔥 CONVERSIÓN DE TABLA A TARJETAS PARA CELULARES 🔥 */
   .tabla-responsive { border: none; background: transparent; box-shadow: none; }
   .tabla-historial thead { display: none; }
   .tabla-historial, .tabla-historial tbody, .tabla-historial tr, .tabla-historial td { display: block; width: 100%; box-sizing: border-box; }
@@ -1225,36 +1242,26 @@ label {
     box-sizing: border-box;
   }
 
-  .texto-salir {
-    display: none; 
-  }
-  
-  .btn-salir {
-    padding: 10px 12px; 
-  }
+  .texto-salir { display: none; }
+  .btn-salir { padding: 10px 12px; }
+  .header-nav { width: 100%; box-sizing: border-box; }
 
-.header-nav {
+  .tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
     width: 100%;
+    background-color: #fff;
+    border: solid 1px #c0c0c0d1;
+    border-radius: 20px 20px 0 0;
+    margin: 0;
     box-sizing: border-box;
-}
-
-  /* 🔥 OPCIÓN 2: BARRA INFERIOR ESTILO APP NATIVA 🔥 */
-    .tabs {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #fff;
-        border: solid 1px #c0c0c0d1;
-        border-radius: 20px 20px 0 0;
-        margin: 0;
-        box-sizing: border-box;
-        padding: 5px;
-        gap: 2px;
-        z-index: 1000;
-        display: flex;
-        justify-content: space-between;
-    }
+    padding: 5px;
+    gap: 2px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+  }
 
   .tabs button {
     flex: 1; 
@@ -1271,51 +1278,35 @@ label {
     display: flex;
   }
 
-.tabs button.active .icono-tab {
-  filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
-  transition: filter 0.3s ease;
-}
-
-.tabs button.active:nth-child(3) .icono-tab,
-.tabs button.active:nth-child(4) .icono-tab {
-  filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(130%) contrast(101%); 
-}
-
-  .dashboard-container {
-    padding-bottom: 70px;
-  }
-  
-  .tabs .texto-tab {
-    display: none; 
-  }
-  
-  .icono-tab {
-    display: block;
-    filter: invert(0%) opacity(60%);
+  .tabs button.active .icono-tab {
+    filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
+    transition: filter 0.3s ease;
   }
 
-  .tabs button {
-    padding: 10px;
+  .tabs button.active:nth-child(3) .icono-tab,
+  .tabs button.active:nth-child(4) .icono-tab {
+    filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(130%) contrast(101%); 
   }
+
+  .dashboard-container { padding-bottom: 70px; }
+  .tabs .texto-tab { display: none; }
+  .icono-tab { display: block; filter: invert(0%) opacity(60%); }
+  .tabs button { padding: 10px; }
 
   .banner-pwa {
-    flex-direction: column; /* Apilamos el texto arriba y los botones abajo */
+    flex-direction: column; 
     text-align: center;
     gap: 15px;
   }
-  .banner-pwa span {
-    padding-right: 0;
-  }
+  .banner-pwa span { padding-right: 0; }
   .btn-cerrar-banner {
-    position: absolute; /* Ponemos la X en la esquina superior derecha */
+    position: absolute; 
     top: 5px;
     right: 5px;
   }
 }
 
 @media (max-width: 390px) {
-  .brand h2{
-    display: none;
-  }
+  .brand h2{ display: none; }
 }
 </style>
