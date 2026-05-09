@@ -40,24 +40,34 @@
 
     <div class="tabs">
       <button :class="{ active: vistaActual === 'crear' }" @click="cambiarVista('crear')">
-        <img src="/precio.png" class="icono-tab" alt="Cotización">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icono-tab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+          <path d="M12 18V6"/>
+        </svg>
         <span class="texto-tab">Cotización</span>
       </button>
       
       <button :class="{ active: vistaActual === 'cobro' }" @click="cambiarVista('cobro')">
-        <img src="/cobro.png" class="icono-tab" alt="Cobro">
-        <span class="texto-tab">Cuenta de Cobro</span>
-      </button>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icono-tab">
+    <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+    <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+    <path d="m2 16 6 6"/>
+    <circle cx="16" cy="9" r="2.9"/>
+    <circle cx="6" cy="5" r="3"/>
+  </svg>
+  <span class="texto-tab">Cuenta de Cobro</span>
+</button>
       
-      <button :class="{ active: vistaActual === 'historial' }" @click="cambiarVista('historial')">
-        <img src="/historial.png" class="icono-tab" alt="historial">
-        <span class="texto-tab">Historial</span>
-      </button>
+    <button :class="{ active: vistaActual === 'historial' }" @click="cambiarVista('historial')">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icono-tab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      <span class="texto-tab">Historial</span>
+    </button>
       
       <button :class="{ active: vistaActual === 'ajustes' }" @click="cambiarVista('ajustes')">
-        <img src="/ajuste.png" class="icono-tab" alt="ajuste">
-        <span class="texto-tab">Ajustes</span>
-      </button>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icono-tab"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="texto-tab">Ajustes</span>
+    </button>
     </div>
 
     <main v-if="vistaActual === 'crear'" class="card-formulario">
@@ -804,10 +814,10 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
   background: white; color: #d35400;
 }
 .icono-tab {
-  width: 30px;
-  height: auto;
-  display: none; 
-  transition: filter 0.3s ease;
+  width: 24px; /* Tamaño del ícono, puedes subirlo a 28px si lo quieres más grande */
+  height: 24px;
+  display: none; /* Sigue oculto en PC */
+  transition: all 0.3s ease; /* Transición suave de color y tamaño */
 }
 .card-formulario { 
     background: white;
@@ -1268,7 +1278,7 @@ label {
     white-space: nowrap; 
     border: none;
     background: #FFF;
-    color: #b4b1b1bf;
+    color: #373737a3;
     cursor: pointer;
     font-weight: bold;
     font-size: 15px;
@@ -1278,19 +1288,15 @@ label {
     display: flex;
   }
 
-  .tabs button.active .icono-tab {
-    filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(98%) contrast(101%);
-    transition: filter 0.3s ease;
-  }
-
-  .tabs button.active:nth-child(3) .icono-tab,
-  .tabs button.active:nth-child(4) .icono-tab {
-    filter: invert(48%) sepia(89%) saturate(1900%) hue-rotate(1deg) brightness(130%) contrast(101%); 
+/* ✅ PON ESTO EN EL MEDIA QUERY DE 580px ✅ */
+  .icono-tab {
+    display: block;
+    /* Un pequeño margen abajo para que no se pegue al texto si decides mostrar ambos */
+    margin-bottom: 2px; 
   }
 
   .dashboard-container { padding-bottom: 70px; }
   .tabs .texto-tab { display: none; }
-  .icono-tab { display: block; filter: invert(0%) opacity(60%); }
   .tabs button { padding: 10px; }
 
   .banner-pwa {
