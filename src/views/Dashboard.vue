@@ -814,10 +814,10 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
   background: white; color: #d35400;
 }
 .icono-tab {
-  width: 24px; /* Tamaño del ícono, puedes subirlo a 28px si lo quieres más grande */
+  width: 24px;
   height: 24px;
-  display: none; /* Sigue oculto en PC */
-  transition: all 0.3s ease; /* Transición suave de color y tamaño */
+  display: none; 
+  transition: all 0.3s ease; 
 }
 .card-formulario { 
     background: white;
@@ -832,7 +832,12 @@ const cerrarSesion = async () => { await signOut(auth); router.push('/login'); }
 }
 .card-formulario h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 25px; }
 
-.seccion-form { margin-bottom: 30px; }
+.seccion-form { 
+  margin-bottom: 30px; 
+  gap: 10px;
+  display: flex;
+  flex-direction: column;
+}
 .seccion-form h4 { color: #8b4513; margin-bottom: 15px; }
 
 /* 🔥 TRUCO MAGICO: min(100%, 220px) 🔥 */
@@ -858,7 +863,6 @@ input, textarea {
   cursor: text !important; 
   caret-color: #d35400; 
   color-scheme: light;
-  /* CRÍTICO: Permitimos que se encojan hacia adentro */
   min-width: 0 !important;
 }
 
@@ -1012,21 +1016,46 @@ label {
 }
 
 /* =========================================
-   ESTILOS DE ITEM DE TRABAJO
+   ESTILOS DE ITEM DE TRABAJO (FILA ÚNICA EN PC)
    ========================================= */
 .fila-item { 
   display: flex; 
-  flex-wrap: wrap; 
+  flex-wrap: nowrap; /* 🔥 Obliga a que no se bajen de línea */
   gap: 10px; 
   align-items: center; 
+  margin-bottom: 10px;
 }
-.input-cant { width: 80px; } 
-.input-desc { flex-grow: 1; } 
-.input-valor { width: 140px; }
 
-.btn-agregar, .btn-eliminar { color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-.btn-agregar { background: #2ed573; margin-top: 10px;} .btn-agregar:hover { background: #26b962; }
-.btn-eliminar { background: #ff6b81; padding: 10px 15px; } .btn-eliminar:hover { background: #ff4757; }
+.input-cant { 
+  width: 80px !important; 
+  flex-shrink: 0; 
+} 
+
+.input-desc { 
+  width: auto !important; 
+  flex-grow: 1; /* Ocupa el espacio central */
+} 
+
+.input-valor { 
+  width: 140px !important; 
+  flex-shrink: 0; 
+}
+
+.btn-agregar { 
+  background: #2ed573; color: white; border: none; padding: 12px 18px; 
+  border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; 
+  margin-top: 10px;
+}
+.btn-agregar:hover { background: #26b962; }
+
+.btn-eliminar { 
+  background: #ff6b81; color: white; border: none; 
+  width: 46px !important; height: 46px !important; /* 🔥 Cuadrado perfecto */
+  padding: 0; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px;
+  transition: 0.2s; flex-shrink: 0; display: flex; justify-content: center; align-items: center;
+} 
+.btn-eliminar:hover { background: #ff4757; transform: scale(1.05); }
+
 
 /* NUEVOS ESTILOS DE EDICIÓN */
 .acciones-form { display: flex; gap: 15px; margin-top: 25px; }
@@ -1194,7 +1223,7 @@ label {
     grid-template-columns: 1fr;
   }
 
-  /* 🔥 LA CORRECCIÓN DE LAYOUT STAGGERED PARA MÓVILES 🔥 */
+  /* 🔥 LA CORRECCIÓN DE LAYOUT PARA MÓVILES 🔥 */
   .fila-item {
     flex-direction: column;
     align-items: flex-start;
@@ -1204,10 +1233,11 @@ label {
     border: 1px solid #e2dcd0;
   }
 
+  /* CRÍTICO: Obliga a que en celular SÍ ocupen el 100% anulando el !important de PC */
   .fila-item input,
   .fila-item textarea,
   .fila-item button {
-    width: 100%;
+    width: 100% !important;
   }
 
   .input-cant { order: 1; } 
@@ -1216,7 +1246,7 @@ label {
   
   .btn-eliminar { 
     order: 4; 
-    width: 100%; 
+    height: auto !important; /* Quita el cuadrado fijo en móviles */
     text-align: center;
     margin-top: 10px; 
     padding: 12px; 
@@ -1291,7 +1321,6 @@ label {
 /* ✅ PON ESTO EN EL MEDIA QUERY DE 580px ✅ */
   .icono-tab {
     display: block;
-    /* Un pequeño margen abajo para que no se pegue al texto si decides mostrar ambos */
     margin-bottom: 2px; 
   }
 
