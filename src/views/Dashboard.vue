@@ -87,10 +87,10 @@
                 </div>
                 <transition name="slide-up-fade">
                   <ul v-show="dropdownCotizacionAbierto" class="custom-options-list">
-                    <li @click="cotizacion.tipoDoc = 'NIT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'NIT' }">NIT</li>
+                    <li @click="cotizacion.tipoDoc = 'NIT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'NIT' }">N.I.T</li>
                     <li @click="cotizacion.tipoDoc = 'CC'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CC' }">C.C.</li>
                     <li @click="cotizacion.tipoDoc = 'CE'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CE' }">C.E.</li>
-                    <li @click="cotizacion.tipoDoc = 'PPT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PPT' }">PPT</li>
+                    <li @click="cotizacion.tipoDoc = 'PPT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PPT' }">P.P.T</li>
                     <li @click="cotizacion.tipoDoc = 'PAS'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PAS' }">PAS</li>
                   </ul>
                 </transition>
@@ -156,10 +156,10 @@
                 </div>
                 <transition name="slide-up-fade">
                   <ul v-show="dropdownCobroAbierto" class="custom-options-list">
-                    <li @click="cobro.tipoDoc = 'NIT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'NIT' }">NIT</li>
+                    <li @click="cobro.tipoDoc = 'NIT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'NIT' }">N.I.T</li>
                     <li @click="cobro.tipoDoc = 'CC'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CC' }">C.C.</li>
                     <li @click="cobro.tipoDoc = 'CE'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CE' }">C.E.</li>
-                    <li @click="cobro.tipoDoc = 'PPT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PPT' }">PPT</li>
+                    <li @click="cobro.tipoDoc = 'PPT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PPT' }">P.P.T</li>
                     <li @click="cobro.tipoDoc = 'PAS'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PAS' }">PAS</li>
                   </ul>
                 </transition>
