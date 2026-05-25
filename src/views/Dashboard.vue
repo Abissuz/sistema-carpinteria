@@ -79,8 +79,7 @@
           <div>
             <label>Documento de Identidad *</label>
             <div class="input-group-fused">
-              
-              <div class="custom-select-wrapper" tabindex="0" @blur="setTimeout(() => dropdownCotizacionAbierto = false, 200)">
+              <div class="custom-select-wrapper cotizacion" @click.stop>
                 <div class="select-fused" @click="dropdownCotizacionAbierto = !dropdownCotizacionAbierto" :class="{ 'is-focus': dropdownCotizacionAbierto }">
                   <span>{{ cotizacion.tipoDoc === 'CC' ? 'C.C.' : cotizacion.tipoDoc === 'CE' ? 'C.E.' : cotizacion.tipoDoc === 'PAS' ? 'PAS' : cotizacion.tipoDoc }}</span>
                   <svg class="flecha-select" :class="{ 'rotada': dropdownCotizacionAbierto }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -134,7 +133,7 @@
           <button v-if="editandoId" @click="cancelarEdicion" class="btn-cancelar">
             Cancelar Edición
           </button>
-          <button @click="procesarCotizacion" class="btn-guardar" :disabled="cargando">
+          <button @click="procesarCotizacion" class="btn-guardar" :disabled="cargando || !cotizacionValida">
             {{ cargando ? 'Guardando PDF...' : (editandoId ? 'Actualizar Cotización' : 'Generar Cotización') }}
           </button>
         </div>
@@ -148,8 +147,7 @@
           <div>
             <label>Identificación *</label>
             <div class="input-group-fused">
-              
-              <div class="custom-select-wrapper" tabindex="0" @blur="setTimeout(() => dropdownCobroAbierto = false, 200)">
+              <div class="custom-select-wrapper cobro" @click.stop>
                 <div class="select-fused" @click="dropdownCobroAbierto = !dropdownCobroAbierto" :class="{ 'is-focus': dropdownCobroAbierto }">
                   <span>{{ cobro.tipoDoc === 'CC' ? 'C.C.' : cobro.tipoDoc === 'CE' ? 'C.E.' : cobro.tipoDoc === 'PAS' ? 'PAS' : cobro.tipoDoc }}</span>
                   <svg class="flecha-select" :class="{ 'rotada': dropdownCobroAbierto }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -189,7 +187,7 @@
           <button v-if="editandoId" @click="cancelarEdicion" class="btn-cancelar">
             Cancelar Edición
           </button>
-          <button @click="procesarCobro" class="btn-guardar-cobro" :disabled="cargando">
+          <button @click="procesarCobro" class="btn-guardar-cobro" :disabled="cargando || !cobroValido">
             {{ cargando ? 'Guardando...' : (editandoId ? 'Actualizar Cobro' : 'Generar Cuenta de Cobro') }}
           </button>
         </div>
@@ -198,57 +196,85 @@
 
     <main v-if="vistaActual === 'historial'" class="card-formulario">
       <div class="header-historial">
-  <input type="text" v-model="busqueda" placeholder="Buscar por cliente o número..." class="input-buscador">
-  
-  <div class="filtros-tipo">
-    <button :class="{ activo: filtroTipo === 'todos' }" @click="filtroTipo = 'todos'">Todos</button>
-    <button :class="{ activo: filtroTipo === 'cotizacion' }" @click="filtroTipo = 'cotizacion'">Cotización</button>
-    <button :class="{ activo: filtroTipo === 'cobro' }" @click="filtroTipo = 'cobro'">Cobro</button>
-  </div>
-</div>
+        <input type="text" v-model="busqueda" placeholder="Buscar por cliente o número..." class="input-buscador">
+        
+        <div class="filtros-y-orden">
+          <div class="filtros-tipo">
+            <button :class="{ activo: filtroTipo === 'todos' }" @click="filtroTipo = 'todos'">Todos</button>
+            <button :class="{ activo: filtroTipo === 'cotizacion' }" @click="filtroTipo = 'cotizacion'">Cotización</button>
+            <button :class="{ activo: filtroTipo === 'cobro' }" @click="filtroTipo = 'cobro'">Cobro</button>
+          </div>
+          
+          <div class="orden">
+            <button 
+              :class="{ activo: ordenActual === 'recientes' }" 
+              @click="ordenActual = 'recientes'"
+              title="Más recientes primero">
+              ↑ Recientes
+            </button>
+            <button 
+              :class="{ activo: ordenActual === 'antiguos' }" 
+              @click="ordenActual = 'antiguos'"
+              title="Más antiguos primero">
+              ↓ Antiguos
+            </button>
+          </div>
+        </div>
+      </div>
       
       <div class="tabla-responsive">
-  <table class="tabla-historial">
-    <thead>
-      <tr>
-        <th>Tipo / Nº</th>
-        <th>Cliente</th>
-        <th class="text-right">Total</th> 
-        <th class="text-right">Fecha</th>
-        <th class="text-center">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="documento in historialFiltrado" :key="documento.id">
-        <td data-label="Tipo / Nº" class="bold">
-          <span :class="documento.tipo === 'cobro' ? 'badge-cobro' : 'badge-cot'">
-            {{ documento.tipo === 'cobro' ? 'COBRO' : 'COT' }}
-          </span>
-          #{{ documento.numero }}
-        </td>
-        
-        <td data-label="Cliente">{{ documento.cliente }}</td>
-        
-        <td data-label="Total" class="text-right bold">
-          $ {{ formatearMoneda(documento.total) }}
-        </td>
-        
-        <td data-label="Fecha" class="text-right">
-          {{ documento.fechaCreacionStr || 'N/A' }}
-        </td>
-        
-        <td data-label="Acciones" class="acciones-celda text-center">
-          <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar">📄</button>
-          <button @click="editarDocumento(documento)" class="btn-editar" title="Editar">✏️</button>
-          <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar">🗑️</button>
-        </td>
-      </tr>
-      <tr v-if="historialFiltrado.length === 0">
-        <td colspan="5" class="text-center mensaje-vacio">No se encontraron documentos en el historial.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+        <table class="tabla-historial">
+          <thead>
+            <tr>
+              <th>Tipo / Nº</th>
+              <th>Cliente</th>
+              <th class="text-right">Total</th> 
+              <th class="text-right">Fecha</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="documento in historialPaginado" :key="documento.id">
+              <td data-label="Tipo / Nº" class="bold">
+                <span :class="documento.tipo === 'cobro' ? 'badge-cobro' : 'badge-cot'">
+                  {{ documento.tipo === 'cobro' ? 'COBRO' : 'COT' }}
+                </span>
+                #{{ documento.numero }}
+              </td>
+              
+              <td data-label="Cliente">{{ documento.cliente }}</td>
+              
+              <td data-label="Total" class="text-right bold">
+                $ {{ formatearMoneda(documento.total) }}
+              </td>
+              
+              <td data-label="Fecha" class="text-right">
+                {{ documento.fechaCreacionStr || 'N/A' }}
+              </td>
+              
+              <td data-label="Acciones" class="acciones-celda text-center">
+                <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar">📄</button>
+                <button @click="editarDocumento(documento)" class="btn-editar" title="Editar">✏️</button>
+                <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+            <tr v-if="historialPaginado.length === 0">
+              <td colspan="5" class="text-center mensaje-vacio">No se encontraron documentos en el historial.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Controles de paginación -->
+      <div class="paginacion" v-if="totalPaginas > 1">
+        <button @click="irPagina(paginaActual - 1)" :disabled="paginaActual === 1" class="btn-pagina">
+          ← Anterior
+        </button>
+        <span class="info-pagina">Página {{ paginaActual }} de {{ totalPaginas }}</span>
+        <button @click="irPagina(paginaActual + 1)" :disabled="paginaActual === totalPaginas" class="btn-pagina">
+          Siguiente →
+        </button>
+      </div>
     </main>
 
     <main v-if="vistaActual === 'ajustes'" class="card-formulario">
@@ -284,28 +310,38 @@ import { useRouter } from 'vue-router';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { doc, runTransaction, collection, setDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, getDoc, getDocs, where, limit } from 'firebase/firestore';
-
-// 👇 IMPORTAMOS SWEETALERT2 👇
+import { doc, runTransaction, collection, setDoc, updateDoc, serverTimestamp, query, onSnapshot, deleteDoc, getDoc, getDocs, where, limit } from 'firebase/firestore';
 import Swal from 'sweetalert2';
-
 import { generarPDF, numeroALetras, formatearMoneda } from '../utils/generadorPdf';
 
 const router = useRouter();
 const cargando = ref(false);
-const vistaActual = ref('crear'); 
+const vistaActual = ref('crear');
 const historial = ref([]);
-const busqueda = ref(''); 
-
-// Variables para saber qué botón de filtro está activo
+const busqueda = ref('');
 const filtroTipo = ref('todos');
-
-// 🔥 NUEVO: Variables para controlar los Selects Personalizados 🔥
+// Orden y paginación
+const ordenActual = ref('recientes'); // 'recientes' o 'antiguos'
+const paginaActual = ref(1);
+const elementosPorPagina = 10;
 const dropdownCotizacionAbierto = ref(false);
 const dropdownCobroAbierto = ref(false);
-
 const editandoId = ref(null);
 
+// 🔥 Cerrar dropdowns al hacer clic fuera
+const cerrarDropdowns = (event) => {
+  const wrapperCot = event.target.closest('.custom-select-wrapper.cotizacion');
+  const wrapperCob = event.target.closest('.custom-select-wrapper.cobro');
+  
+  if (!wrapperCot) {
+    dropdownCotizacionAbierto.value = false;
+  }
+  if (!wrapperCob) {
+    dropdownCobroAbierto.value = false;
+  }
+};
+
+// PWA
 const deferredPrompt = ref(window.deferredPWA || null);
 const yaInstalado = ref(window.matchMedia('(display-mode: standalone)').matches);
 
@@ -322,11 +358,36 @@ const instalarApp = async () => {
     if (outcome === 'accepted') {
       yaInstalado.value = true;
     }
-    deferredPrompt.value = null; 
+    deferredPrompt.value = null;
     window.deferredPWA = null;
   }
 };
 
+// Banner con localStorage (7 días)
+const BANNER_KEY = 'banner_pwa_cerrado_fecha';
+const bannerOculto = ref(false);
+
+const verificarBanner = () => {
+  const cerradoStr = localStorage.getItem(BANNER_KEY);
+  if (cerradoStr) {
+    const cerradoFecha = new Date(cerradoStr);
+    const ahora = new Date();
+    const diffDias = (ahora - cerradoFecha) / (1000 * 60 * 60 * 24);
+    if (diffDias >= 7) {
+      bannerOculto.value = false;
+      localStorage.removeItem(BANNER_KEY);
+    } else {
+      bannerOculto.value = true;
+    }
+  }
+};
+
+const cerrarBanner = () => {
+  bannerOculto.value = true;
+  localStorage.setItem(BANNER_KEY, new Date().toISOString());
+};
+
+// Ajustes
 const cargandoAjustes = ref(false);
 const ajustes = ref({
   tiempoEntrega: '30 dias habiles',
@@ -335,19 +396,81 @@ const ajustes = ref({
   garantia: '02 años por defectos de fabricación. Herrajes 1 mes.'
 });
 
-const historialFiltrado = computed(() => {
-  return historial.value.filter(doc => {
-    const termino = busqueda.value.toLowerCase();
-    const coincideTexto = !termino || 
-                          doc.cliente?.toLowerCase().includes(termino) || 
-                          doc.numero?.toString().toLowerCase().includes(termino);
-    
-    const coincideTipo = filtroTipo.value === 'todos' || doc.tipo === filtroTipo.value;
+// 🔥 FUNCIONES PARA ORDENAR POR FECHA 🔥
+// Obtiene una fecha comparable (timestamp en milisegundos) de un documento
+const obtenerFechaOrdenable = (doc) => {
+  // Si tiene fechaCreacion como timestamp de Firestore (objeto con toDate())
+  if (doc.fechaCreacion && typeof doc.fechaCreacion.toDate === 'function') {
+    return doc.fechaCreacion.toDate().getTime();
+  }
+  // Si tiene fechaCreacion como objeto con seconds (Firestore serializado)
+  if (doc.fechaCreacion && doc.fechaCreacion.seconds) {
+    return doc.fechaCreacion.seconds * 1000;
+  }
+  // Si solo tiene fechaCreacionStr (formato DD/MM/YYYY)
+  if (doc.fechaCreacionStr) {
+    const partes = doc.fechaCreacionStr.split('/');
+    if (partes.length === 3) {
+      return new Date(partes[2], partes[1] - 1, partes[0]).getTime();
+    }
+  }
+  // Si no hay fecha, devolver 0 (va al final)
+  return 0;
+};
 
+// Ordena un array de documentos por fecha
+const ordenarPorFecha = (docs, orden = 'recientes') => {
+  return [...docs].sort((a, b) => {
+    const fechaA = obtenerFechaOrdenable(a);
+    const fechaB = obtenerFechaOrdenable(b);
+    
+    if (orden === 'recientes') {
+      return fechaB - fechaA; // Más recientes primero
+    } else {
+      return fechaA - fechaB; // Más antiguos primero
+    }
+  });
+};
+
+// 🔥 HISTORIAL FILTRADO CON ORDEN CORRECTO 🔥
+const historialFiltrado = computed(() => {
+  let resultado = historial.value.filter(doc => {
+    const termino = busqueda.value.toLowerCase();
+    const coincideTexto = !termino ||
+      doc.cliente?.toLowerCase().includes(termino) ||
+      doc.numero?.toString().toLowerCase().includes(termino);
+    const coincideTipo = filtroTipo.value === 'todos' || doc.tipo === filtroTipo.value;
     return coincideTexto && coincideTipo;
   });
+  
+  // Ordenar por fecha según preferencia
+  resultado = ordenarPorFecha(resultado, ordenActual.value);
+  
+  return resultado;
 });
 
+const totalPaginas = computed(() => {
+  return Math.ceil(historialFiltrado.value.length / elementosPorPagina) || 1;
+});
+
+const historialPaginado = computed(() => {
+  const inicio = (paginaActual.value - 1) * elementosPorPagina;
+  return historialFiltrado.value.slice(inicio, inicio + elementosPorPagina);
+});
+
+// Watcher para resetear página al cambiar filtros o búsqueda
+watch([busqueda, filtroTipo, ordenActual], () => {
+  paginaActual.value = 1;
+});
+
+// Funciones de paginación
+const irPagina = (pagina) => {
+  if (pagina >= 1 && pagina <= totalPaginas.value) {
+    paginaActual.value = pagina;
+  }
+};
+
+// Eliminar documento
 const eliminarDocumento = async (id, numero) => {
   const result = await Swal.fire({
     title: '¿Estás seguro?',
@@ -359,11 +482,10 @@ const eliminarDocumento = async (id, numero) => {
     confirmButtonText: 'Sí, eliminar',
     cancelButtonText: 'Cancelar'
   });
-
   if (result.isConfirmed) {
     try {
       await deleteDoc(doc(db, "documentos_guardados", id));
-      Swal.fire('¡Eliminado!', 'El documento ha sido borrado de la base de datos.', 'success');
+      Swal.fire('¡Eliminado!', 'El documento ha sido borrado.', 'success');
     } catch (error) {
       console.error("Error al eliminar:", error);
       Swal.fire('Error', 'No se pudo eliminar el documento.', 'error');
@@ -371,20 +493,21 @@ const eliminarDocumento = async (id, numero) => {
   }
 };
 
+// Editar documento
 const editarDocumento = (docGuardado) => {
-  editandoId.value = docGuardado.id; 
+  editandoId.value = docGuardado.id;
   if (docGuardado.tipo === 'cotizacion') {
-    cotizacion.value = JSON.parse(JSON.stringify(docGuardado)); 
-    vistaActual.value = 'crear'; 
+    cotizacion.value = JSON.parse(JSON.stringify(docGuardado));
+    vistaActual.value = 'crear';
   } else if (docGuardado.tipo === 'cobro') {
     cobro.value = JSON.parse(JSON.stringify(docGuardado));
-    cobro.value.monto = docGuardado.total; 
+    cobro.value.monto = docGuardado.total;
     vistaActual.value = 'cobro';
   }
 };
 
 const cancelarEdicion = () => {
-  editandoId.value = null; 
+  editandoId.value = null;
   cotizacion.value = JSON.parse(JSON.stringify(cotizacionBase));
   cobro.value = JSON.parse(JSON.stringify(cobroBase));
   vistaActual.value = 'historial';
@@ -402,7 +525,6 @@ const cambiarVista = async (nuevaVista) => {
       confirmButtonText: 'Sí, salir',
       cancelButtonText: 'Quedarme aquí'
     });
-
     if (result.isConfirmed) {
       cancelarEdicion();
       vistaActual.value = nuevaVista;
@@ -412,31 +534,44 @@ const cambiarVista = async (nuevaVista) => {
   }
 };
 
+// Ver documento (descarga directa)
 const verDocumento = (docGuardado) => {
-  generarPDF(docGuardado.tipo, docGuardado, ajustes.value);
+  generarPDF(docGuardado.tipo, docGuardado, ajustes.value, false);
 };
 
-const numeroGenerado = ref('0000-00');
-const fechaImpresion = ref('');
-
-const cotizacionBase = { tipoDoc: 'CC', cliente: '', documento: '', nit: '', direccion: '', torre: '', apto: '', barrio: '', contacto: '', observaciones: '', items: [{ cantidad: 1, descripcion: '', valor: null }] };
+// Bases de datos reactivas
+const cotizacionBase = {
+  tipoDoc: 'CC', cliente: '', documento: '', direccion: '', torre: '', apto: '',
+  barrio: '', contacto: '', observaciones: '', items: [{ cantidad: 1, descripcion: '', valor: null }]
+};
 const cotizacion = ref(JSON.parse(JSON.stringify(cotizacionBase)));
 
-const numeroCobroGenerado = ref('0');
-const cobroBase = { tipoDoc: 'NIT', cliente: '', documento: '', nit: '', direccion: '', fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: '' };
+const cobroBase = {
+  tipoDoc: 'NIT', cliente: '', documento: '', direccion: '',
+  fechaCiudad: `Bogotá, ${new Date().toLocaleDateString()}`, monto: null, montoLetras: '', concepto: ''
+};
 const cobro = ref(JSON.parse(JSON.stringify(cobroBase)));
 
+// Validaciones para deshabilitar botones
+const cotizacionValida = computed(() => {
+  return cotizacion.value.cliente.trim() !== '' &&
+    cotizacion.value.items.some(item => item.valor > 0);
+});
+const cobroValido = computed(() => {
+  return cobro.value.cliente.trim() !== '' && cobro.value.monto > 0;
+});
+
+// Búsqueda de cliente normalizada
 const buscarCliente = async (tipoVista) => {
   const docBuscar = tipoVista === 'cotizacion' ? cotizacion.value.documento : cobro.value.documento;
-  if (!docBuscar || docBuscar.length < 5) return; 
+  if (!docBuscar || docBuscar.trim().length < 5) return;
 
+  const docNormalizado = docBuscar.trim().toUpperCase();
   try {
-    const q = query(collection(db, "documentos_guardados"), where("documento", "==", docBuscar), limit(1));
+    const q = query(collection(db, "documentos_guardados"), where("documento", "==", docNormalizado), limit(1));
     const querySnapshot = await getDocs(q);
-
     if (!querySnapshot.empty) {
       const datosAnteriores = querySnapshot.docs[0].data();
-      
       if (tipoVista === 'cotizacion') {
         cotizacion.value.cliente = datosAnteriores.cliente || '';
         cotizacion.value.direccion = datosAnteriores.direccion || '';
@@ -444,13 +579,12 @@ const buscarCliente = async (tipoVista) => {
         cotizacion.value.apto = datosAnteriores.apto || '';
         cotizacion.value.barrio = datosAnteriores.barrio || '';
         cotizacion.value.contacto = datosAnteriores.contacto || '';
-        if(datosAnteriores.tipoDoc) cotizacion.value.tipoDoc = datosAnteriores.tipoDoc;
+        if (datosAnteriores.tipoDoc) cotizacion.value.tipoDoc = datosAnteriores.tipoDoc;
       } else {
         cobro.value.cliente = datosAnteriores.cliente || '';
         cobro.value.direccion = datosAnteriores.direccion || '';
-        if(datosAnteriores.tipoDoc) cobro.value.tipoDoc = datosAnteriores.tipoDoc;
+        if (datosAnteriores.tipoDoc) cobro.value.tipoDoc = datosAnteriores.tipoDoc;
       }
-
       const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 3000, timerProgressBar: true });
       Toast.fire({ icon: "success", title: "Datos del cliente autocompletados" });
     }
@@ -459,6 +593,7 @@ const buscarCliente = async (tipoVista) => {
   }
 };
 
+// Watch para monto en letras
 watch(() => cobro.value.monto, (nuevoMonto) => {
   if (nuevoMonto && nuevoMonto > 0) {
     cobro.value.montoLetras = numeroALetras(nuevoMonto);
@@ -467,84 +602,97 @@ watch(() => cobro.value.monto, (nuevoMonto) => {
   }
 });
 
+// Items cotización
 const agregarItem = () => cotizacion.value.items.push({ cantidad: 1, descripcion: '', valor: null });
 const eliminarItem = (index) => cotizacion.value.items.splice(index, 1);
 const calcularTotal = () => cotizacion.value.items.reduce((total, item) => total + (item.valor || 0), 0);
-const obtenerFechaActual = () => { const f = new Date(); return `${f.getDate()}/${f.getMonth() + 1}/${f.getFullYear()}`; };
-
-const bannerOculto = ref(false);
-
-const cerrarBanner = () => {
-  bannerOculto.value = true;
+const obtenerFechaActual = () => {
+  const f = new Date();
+  return `${f.getDate()}/${f.getMonth() + 1}/${f.getFullYear()}`;
 };
 
-onMounted(async () => {
-  window.addEventListener('pwa-lista', revisarPWA);
-  revisarPWA();
-
-  const q = query(collection(db, "documentos_guardados"), orderBy("fechaCreacion", "desc"));
-  onSnapshot(q, (querySnapshot) => {
-    const dataTemp = [];
-    querySnapshot.forEach((doc) => { dataTemp.push({ id: doc.id, ...doc.data() }); });
-    historial.value = dataTemp;
+// 🔥 Función para previsualizar y confirmar (solo documentos nuevos)
+const previsualizarYGuardar = async (tipo, datosTemp) => {
+  generarPDF(tipo, datosTemp, ajustes.value, true);
+  const result = await Swal.fire({
+    title: '¿Confirmar y guardar?',
+    text: 'Revisa el PDF en la nueva pestaña. ¿Deseas guardar este documento?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar'
   });
+  return result.isConfirmed;
+};
 
-  try {
-    const docAjustes = await getDoc(doc(db, "configuracion", "general"));
-    if (docAjustes.exists()) { ajustes.value = docAjustes.data(); }
-  } catch(e) { console.error("Error al cargar ajustes:", e); }
-});
-
-onUnmounted(() => {
-  window.removeEventListener('pwa-lista', revisarPWA);
-});
-
+// Guardar ajustes
 const guardarAjustes = async () => {
   cargandoAjustes.value = true;
   try {
     await setDoc(doc(db, "configuracion", "general"), ajustes.value);
-    Swal.fire({
-      title: '¡Actualizado!',
-      text: 'Los ajustes se guardaron correctamente.',
-      icon: 'success',
-      timer: 2000,
-      showConfirmButton: false
-    });
-  } catch (error) { 
-    console.error(error); 
+    Swal.fire({ title: '¡Actualizado!', text: 'Los ajustes se guardaron correctamente.', icon: 'success', timer: 2000, showConfirmButton: false });
+  } catch (error) {
+    console.error(error);
     Swal.fire('Error', 'No se pudieron guardar los ajustes.', 'error');
   }
   cargandoAjustes.value = false;
 };
 
+// Procesar cotización
 const procesarCotizacion = async () => {
-  if (!cotizacion.value.cliente) {
-    return Swal.fire('Faltan datos', 'Por favor, ingresa el nombre del cliente.', 'warning');
+  if (!cotizacionValida.value) {
+    return Swal.fire('Faltan datos', 'Completa el cliente y al menos un ítem con valor.', 'warning');
   }
-  
+
+  cotizacion.value.documento = cotizacion.value.documento.trim().toUpperCase();
+
+  if (!editandoId.value) {
+    const datosTemp = {
+      tipo: 'cotizacion',
+      tipoDoc: cotizacion.value.tipoDoc,
+      numero: 'PREVIEW',
+      cliente: cotizacion.value.cliente,
+      documento: cotizacion.value.documento,
+      direccion: cotizacion.value.direccion,
+      torre: cotizacion.value.torre,
+      apto: cotizacion.value.apto,
+      barrio: cotizacion.value.barrio,
+      contacto: cotizacion.value.contacto,
+      observaciones: cotizacion.value.observaciones,
+      items: cotizacion.value.items,
+      total: calcularTotal(),
+      fechaCreacionStr: obtenerFechaActual(),
+      fechaCreacion: new Date()
+    };
+    const confirmado = await previsualizarYGuardar('cotizacion', datosTemp);
+    if (!confirmado) return;
+  }
+
   cargando.value = true;
   try {
     let numeroFinal = '';
-
     if (!editandoId.value) {
       const fecha = new Date();
-      const periodoId = `${String(fecha.getMonth() + 1).padStart(2, '0')}${String(fecha.getFullYear()).slice(-2)}`; 
+      const periodoId = `${String(fecha.getMonth() + 1).padStart(2, '0')}${String(fecha.getFullYear()).slice(-2)}`;
       const correlativoRef = doc(db, "correlativos", periodoId);
       let nuevoNumero = 1;
-
       await runTransaction(db, async (transaction) => {
         const correlativoDoc = await transaction.get(correlativoRef);
-        if (!correlativoDoc.exists()) { transaction.set(correlativoRef, { ultimoNumero: 1 }); } 
-        else { nuevoNumero = correlativoDoc.data().ultimoNumero + 1; transaction.update(correlativoRef, { ultimoNumero: nuevoNumero }); }
+        if (!correlativoDoc.exists()) {
+          transaction.set(correlativoRef, { ultimoNumero: 1 });
+        } else {
+          nuevoNumero = correlativoDoc.data().ultimoNumero + 1;
+          transaction.update(correlativoRef, { ultimoNumero: nuevoNumero });
+        }
       });
       numeroFinal = `${periodoId}-${String(nuevoNumero).padStart(2, '0')}`;
     } else {
-      numeroFinal = cotizacion.value.numero; 
+      numeroFinal = cotizacion.value.numero;
     }
-    
+
     const datosCompletos = {
       tipo: 'cotizacion',
-      tipoDoc: cotizacion.value.tipoDoc, 
+      tipoDoc: cotizacion.value.tipoDoc,
       numero: numeroFinal,
       cliente: cotizacion.value.cliente,
       documento: cotizacion.value.documento,
@@ -565,55 +713,71 @@ const procesarCotizacion = async () => {
     } else {
       await setDoc(doc(collection(db, "documentos_guardados"), `COT-${numeroFinal}`), datosCompletos);
     }
-    
-    generarPDF('cotizacion', datosCompletos, ajustes.value);
-    
-    Swal.fire({
-      title: '¡Listo!',
-      text: 'Cotización procesada con éxito.',
-      icon: 'success',
-      timer: 1500,
-      showConfirmButton: false
-    });
-    
+
+    generarPDF('cotizacion', datosCompletos, ajustes.value, false);
+
+    Swal.fire({ title: '¡Listo!', text: 'Cotización guardada y descargada.', icon: 'success', timer: 1500, showConfirmButton: false });
     cancelarEdicion();
-  } catch (error) { 
-    console.error(error); 
+  } catch (error) {
+    console.error(error);
     Swal.fire('Error', 'Hubo un problema al guardar la cotización.', 'error');
   }
   cargando.value = false;
 };
 
+// Procesar cobro
 const procesarCobro = async () => {
-  if (!cobro.value.cliente || !cobro.value.monto) {
-    return Swal.fire('Faltan datos', 'Asegúrate de llenar el cliente y el monto.', 'warning');
+  if (!cobroValido.value) {
+    return Swal.fire('Faltan datos', 'Completa el cliente y el monto.', 'warning');
+  }
+
+  cobro.value.documento = cobro.value.documento.trim().toUpperCase();
+
+  if (!editandoId.value) {
+    const datosTemp = {
+      tipo: 'cobro',
+      tipoDoc: cobro.value.tipoDoc,
+      numero: 'PREVIEW',
+      cliente: cobro.value.cliente,
+      documento: cobro.value.documento,
+      direccion: cobro.value.direccion,
+      fechaCiudad: cobro.value.fechaCiudad,
+      montoLetras: cobro.value.montoLetras,
+      concepto: cobro.value.concepto,
+      total: cobro.value.monto,
+      fechaCreacionStr: obtenerFechaActual(),
+      fechaCreacion: new Date()
+    };
+    const confirmado = await previsualizarYGuardar('cobro', datosTemp);
+    if (!confirmado) return;
   }
 
   cargando.value = true;
   try {
     let numeroFinal = '';
-
     if (!editandoId.value) {
       const correlativoRef = doc(db, "correlativos", "cuentas_cobro");
       let nuevoNumero = 1;
-
       await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(correlativoRef);
-        if (!docSnap.exists()) { transaction.set(correlativoRef, { ultimoNumero: 1 }); } 
-        else { nuevoNumero = docSnap.data().ultimoNumero + 1; transaction.update(correlativoRef, { ultimoNumero: nuevoNumero }); }
+        if (!docSnap.exists()) {
+          transaction.set(correlativoRef, { ultimoNumero: 1 });
+        } else {
+          nuevoNumero = docSnap.data().ultimoNumero + 1;
+          transaction.update(correlativoRef, { ultimoNumero: nuevoNumero });
+        }
       });
       numeroFinal = String(nuevoNumero);
     } else {
-      numeroFinal = cobro.value.numero; 
+      numeroFinal = cobro.value.numero;
     }
-    
+
     const datosCompletosCobro = {
       tipo: 'cobro',
       tipoDoc: cobro.value.tipoDoc,
       numero: numeroFinal,
       cliente: cobro.value.cliente,
       documento: cobro.value.documento,
-      nit: cobro.value.nit,
       direccion: cobro.value.direccion,
       fechaCiudad: cobro.value.fechaCiudad,
       montoLetras: cobro.value.montoLetras,
@@ -628,26 +792,46 @@ const procesarCobro = async () => {
     } else {
       await setDoc(doc(collection(db, "documentos_guardados"), `COB-${numeroFinal}`), datosCompletosCobro);
     }
-    
-    generarPDF('cobro', datosCompletosCobro, ajustes.value);
-    
-    Swal.fire({
-      title: '¡Listo!',
-      text: 'Cuenta de cobro procesada con éxito.',
-      icon: 'success',
-      timer: 1500,
-      showConfirmButton: false
-    });
 
+    generarPDF('cobro', datosCompletosCobro, ajustes.value, false);
+
+    Swal.fire({ title: '¡Listo!', text: 'Cuenta de cobro guardada y descargada.', icon: 'success', timer: 1500, showConfirmButton: false });
     cancelarEdicion();
-  } catch (error) { 
-    console.error(error); 
+  } catch (error) {
+    console.error(error);
     Swal.fire('Error', 'Hubo un problema al guardar el cobro.', 'error');
   }
   cargando.value = false;
 };
 
+// Cerrar sesión
 const cerrarSesion = async () => { await signOut(auth); router.push('/login'); };
+
+// Ciclo de vida
+onMounted(async () => {
+  window.addEventListener('pwa-lista', revisarPWA);
+  document.addEventListener('click', cerrarDropdowns);
+  revisarPWA();
+  verificarBanner();
+
+  // 🔥 Consulta SIN orderBy (ordenamos nosotros en la computed)
+  const q = query(collection(db, "documentos_guardados"));
+  onSnapshot(q, (querySnapshot) => {
+    const dataTemp = [];
+    querySnapshot.forEach((doc) => { dataTemp.push({ id: doc.id, ...doc.data() }); });
+    historial.value = dataTemp;
+  });
+
+  try {
+    const docAjustes = await getDoc(doc(db, "configuracion", "general"));
+    if (docAjustes.exists()) { ajustes.value = docAjustes.data(); }
+  } catch (e) { console.error("Error al cargar ajustes:", e); }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('pwa-lista', revisarPWA);
+  document.removeEventListener('click', cerrarDropdowns);
+});
 </script>
 
 <style scoped>
@@ -1020,7 +1204,7 @@ label {
    ========================================= */
 .fila-item { 
   display: flex; 
-  flex-wrap: nowrap; /* 🔥 Obliga a que no se bajen de línea */
+  flex-wrap: nowrap;
   gap: 10px; 
   align-items: center; 
   margin-bottom: 10px;
@@ -1033,7 +1217,7 @@ label {
 
 .input-desc { 
   width: auto !important; 
-  flex-grow: 1; /* Ocupa el espacio central */
+  flex-grow: 1;
 } 
 
 .input-valor { 
@@ -1050,12 +1234,11 @@ label {
 
 .btn-eliminar { 
   background: #ff6b81; color: white; border: none; 
-  width: 46px !important; height: 46px !important; /* 🔥 Cuadrado perfecto */
+  width: 46px !important; height: 46px !important;
   padding: 0; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px;
   transition: 0.2s; flex-shrink: 0; display: flex; justify-content: center; align-items: center;
 } 
 .btn-eliminar:hover { background: #ff4757; transform: scale(1.05); }
-
 
 /* NUEVOS ESTILOS DE EDICIÓN */
 .acciones-form { display: flex; gap: 15px; margin-top: 25px; }
@@ -1079,13 +1262,25 @@ label {
 .mt-10 { margin-top: 10px; }
 .seccion-total h3 { font-size: 24px; color: #d35400; text-align: right; margin-bottom: 15px; border: none; }
 
+/* =========================================
+   HEADER HISTORIAL
+   ========================================= */
 .header-historial { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;}
+
 .input-buscador { width: 100%; padding: 15px; border: 2px solid #e2dcd0; border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s; background: white; box-sizing: border-box;}
 .input-buscador:focus { border-color: #d35400; box-shadow: 0 0 10px rgba(211, 84, 0, 0.1); }
 
 /* =========================================
-   FILTROS DEL HISTORIAL
+   FILTROS Y ORDEN DEL HISTORIAL
    ========================================= */
+.filtros-y-orden {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
 .filtros-tipo {
   display: flex;
   gap: 10px;
@@ -1115,6 +1310,76 @@ label {
   color: white;
   border-color: #d35400;
   box-shadow: 0 4px 10px rgba(211, 84, 0, 0.2);
+}
+
+.orden {
+  display: flex;
+  gap: 5px;
+}
+
+.orden button {
+  padding: 8px 14px;
+  border: 1.5px solid #e2dcd0;
+  background: white;
+  color: #7f8c8d;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.orden button:hover {
+  background: #f8f6f2;
+}
+
+.orden button.activo {
+  background: #d35400;
+  color: white;
+  border-color: #d35400;
+  box-shadow: 0 4px 10px rgba(211, 84, 0, 0.2);
+}
+
+/* =========================================
+   PAGINACIÓN
+   ========================================= */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 15px 0;
+}
+
+.btn-pagina {
+  padding: 10px 18px;
+  border: 1.5px solid #e2dcd0;
+  background: white;
+  color: #7f8c8d;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-pagina:hover:not(:disabled) {
+  background: #f8f6f2;
+  border-color: #d35400;
+  color: #d35400;
+}
+
+.btn-pagina:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.info-pagina {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
 }
 
 /* =========================================
@@ -1169,7 +1434,6 @@ label {
 .badge-cot { background: #1e90ff; color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; margin-right: 10px; font-weight: bold; letter-spacing: 0.5px; }
 .badge-cobro { background: #2ed573; color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; margin-right: 10px; font-weight: bold; letter-spacing: 0.5px; }
 
-/* 🔥 CORRECCIÓN: Botones de Acción (Sin romper el borde) 🔥 */
 .acciones-celda { 
   text-align: center; 
   white-space: nowrap; 
@@ -1213,9 +1477,9 @@ label {
 }
 
 @media (max-width: 950px) {
-.banner-pwa[data-v-7f773d42] {
-  width: 90%;
-}
+  .banner-pwa {
+    width: 90%;
+  }
 }
 
 @media (max-width: 784px) {
@@ -1223,7 +1487,6 @@ label {
     grid-template-columns: 1fr;
   }
 
-  /* 🔥 LA CORRECCIÓN DE LAYOUT PARA MÓVILES 🔥 */
   .fila-item {
     flex-direction: column;
     align-items: flex-start;
@@ -1233,7 +1496,6 @@ label {
     border: 1px solid #e2dcd0;
   }
 
-  /* CRÍTICO: Obliga a que en celular SÍ ocupen el 100% anulando el !important de PC */
   .fila-item input,
   .fila-item textarea,
   .fila-item button {
@@ -1246,12 +1508,22 @@ label {
   
   .btn-eliminar { 
     order: 4; 
-    height: auto !important; /* Quita el cuadrado fijo en móviles */
+    height: auto !important;
     text-align: center;
     margin-top: 10px; 
     padding: 12px; 
     margin-left: 0; 
     margin-right: 0;
+  }
+
+  .filtros-y-orden {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .orden {
+    justify-content: center;
   }
   
   .tabla-responsive { border: none; background: transparent; box-shadow: none; }
@@ -1272,6 +1544,11 @@ label {
   
   .tabla-historial td::before {
     content: attr(data-label); font-weight: bold; color: #8b4513; text-transform: uppercase; font-size: 11px; text-align: left;
+  }
+
+  .paginacion {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 }
 
@@ -1318,7 +1595,6 @@ label {
     display: flex;
   }
 
-/* ✅ PON ESTO EN EL MEDIA QUERY DE 580px ✅ */
   .icono-tab {
     display: block;
     margin-bottom: 2px; 
@@ -1338,6 +1614,11 @@ label {
     position: absolute; 
     top: 5px;
     right: 5px;
+  }
+
+  .orden button {
+    font-size: 12px;
+    padding: 6px 10px;
   }
 }
 
