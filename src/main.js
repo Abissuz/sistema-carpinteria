@@ -4,12 +4,11 @@ import App from './App.vue'
 import router from './router'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
-
-// 🔥 REGISTRO DEL SERVICE WORKER 🔥
 import { registerSW } from 'virtual:pwa-register'
+
 registerSW({ immediate: true })
 
-// 👇 1. EL CAZADOR GLOBAL VA AQUÍ AFUERA (Atrapa el evento al instante) 👇
+// 👇 CAZADOR PWA
 window.deferredPWA = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -22,6 +21,10 @@ let app;
 onAuthStateChanged(auth, (user) => {
   if (!app) {
     app = createApp(App)
+    
+    // 🔥 CLAVE: Indica a Vue que ignore los elementos que empiezan con "ion-"
+    app.config.compilerOptions.isCustomElement = (tag) => tag.startsWith('ion-')
+    
     app.use(router)
     app.mount('#app')
   }

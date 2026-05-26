@@ -86,11 +86,11 @@
                 </div>
                 <transition name="slide-up-fade">
                   <ul v-show="dropdownCotizacionAbierto" class="custom-options-list">
-                    <li @click="cotizacion.tipoDoc = 'NIT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'NIT' }">N.I.T</li>
-                    <li @click="cotizacion.tipoDoc = 'CC'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CC' }">C.C.</li>
-                    <li @click="cotizacion.tipoDoc = 'CE'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CE' }">C.E.</li>
-                    <li @click="cotizacion.tipoDoc = 'PPT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PPT' }">P.P.T</li>
-                    <li @click="cotizacion.tipoDoc = 'PAS'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PAS' }">PAS</li>
+                   <li @click="cotizacion.tipoDoc = 'NIT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'NIT' }" translate="no">N.I.T</li>
+<li @click="cotizacion.tipoDoc = 'CC'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CC' }" translate="no">C.C.</li>
+<li @click="cotizacion.tipoDoc = 'CE'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'CE' }" translate="no">C.E.</li>
+<li @click="cotizacion.tipoDoc = 'PPT'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PPT' }" translate="no">P.P.T</li>
+<li @click="cotizacion.tipoDoc = 'PAS'; dropdownCotizacionAbierto = false" :class="{ active: cotizacion.tipoDoc === 'PAS' }" translate="no">PAS</li>
                   </ul>
                 </transition>
               </div>
@@ -154,11 +154,11 @@
                 </div>
                 <transition name="slide-up-fade">
                   <ul v-show="dropdownCobroAbierto" class="custom-options-list">
-                    <li @click="cobro.tipoDoc = 'NIT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'NIT' }">N.I.T</li>
-                    <li @click="cobro.tipoDoc = 'CC'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CC' }">C.C.</li>
-                    <li @click="cobro.tipoDoc = 'CE'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CE' }">C.E.</li>
-                    <li @click="cobro.tipoDoc = 'PPT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PPT' }">P.P.T</li>
-                    <li @click="cobro.tipoDoc = 'PAS'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PAS' }">PAS</li>
+                    <li @click="cobro.tipoDoc = 'NIT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'NIT' }" translate="no">N.I.T</li>
+                    <li @click="cobro.tipoDoc = 'CC'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CC' }" translate="no">C.C.</li>
+                    <li @click="cobro.tipoDoc = 'CE'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'CE' }" translate="no">C.E.</li>
+                    <li @click="cobro.tipoDoc = 'PPT'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PPT' }" translate="no">P.P.T</li>
+                    <li @click="cobro.tipoDoc = 'PAS'; dropdownCobroAbierto = false" :class="{ active: cobro.tipoDoc === 'PAS' }" translate="no">PAS</li>
                   </ul>
                 </transition>
               </div>
@@ -207,17 +207,18 @@
           
           <div class="orden">
             <button 
-              :class="{ activo: ordenActual === 'recientes' }" 
-              @click="ordenActual = 'recientes'"
-              title="Más recientes primero">
-              ↑ Recientes
-            </button>
-            <button 
-              :class="{ activo: ordenActual === 'antiguos' }" 
-              @click="ordenActual = 'antiguos'"
-              title="Más antiguos primero">
-              ↓ Antiguos
-            </button>
+  :class="{ activo: ordenActual === 'recientes' }" 
+  @click="ordenActual = 'recientes'"
+  title="Más recientes primero">
+  <ion-icon name="arrow-up-outline" class="icono-orden"></ion-icon> Recientes
+</button>
+
+<button 
+  :class="{ activo: ordenActual === 'antiguos' }" 
+  @click="ordenActual = 'antiguos'"
+  title="Más antiguos primero">
+  <ion-icon name="arrow-down-outline" class="icono-orden"></ion-icon> Antiguos
+</button>
           </div>
         </div>
       </div>
@@ -253,9 +254,9 @@
               </td>
               
               <td data-label="Acciones" class="acciones-celda text-center">
-                <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar">📄</button>
-                <button @click="editarDocumento(documento)" class="btn-editar" title="Editar">✏️</button>
-                <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar">🗑️</button>
+                <button @click="verDocumento(documento)" class="btn-ver" title="Ver / Descargar"><ion-icon name="cloud-download-outline"></ion-icon></button>
+                <button @click="editarDocumento(documento)" class="btn-editar" title="Editar"><ion-icon name="create-outline"></ion-icon></button>
+                <button @click="eliminarDocumento(documento.id, documento.numero)" class="btn-borrar" title="Eliminar"><ion-icon name="trash-outline"></ion-icon></button>
               </td>
             </tr>
             <tr v-if="historialPaginado.length === 0">
@@ -1030,7 +1031,11 @@ onUnmounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); 
   gap: 15px; 
 }
-
+.icono-orden {
+  font-size: 16px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
 /* =========================================
    ESTILOS DE INPUTS GENERALES
    ========================================= */
