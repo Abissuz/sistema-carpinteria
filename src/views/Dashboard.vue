@@ -393,7 +393,7 @@ const cargandoAjustes = ref(false);
 const ajustes = ref({
   tiempoEntrega: '30 dias habiles',
   condicionesPago: '60% al formalizar el pedido, 20% por avance de obra y 20% a la entrega.',
-  formaPago: 'Efectivo - Transferencia bancaria. Cta de Ahorros BANCOLOMBIA 669-000015-05 Rafael Jose Pérez Leon.',
+  formaPago: 'Efectivo - Transferencia bancaria. Cta de Ahorros BANCOLOMBIA XXX-XXXXXX-05 Jhon Doe.',
   garantia: '02 años por defectos de fabricación. Herrajes 1 mes.'
 });
 

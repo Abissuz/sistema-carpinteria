@@ -148,7 +148,7 @@ export const generarPDF = (tipo, datos, ajustes, soloVista = false) => {
         width: '*',
         stack: [
           { text: 'CARPINTERIA SAGRADA FAMILIA', style: 'header', alignment: 'center', margin: [0, 0, 0, 0] },
-          { text: 'RAFAEL JOSE PEREZ LEON', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 0] }
+          { text: 'Jhon Doe', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 0] }
         ],
         margin: [0, 14, 0, 0]
       },
@@ -186,7 +186,7 @@ export const generarPDF = (tipo, datos, ajustes, soloVista = false) => {
             width: '*',
             stack: [
               { text: 'CARPINTERIA SAGRADA FAMILIA', style: 'header', alignment: 'center' },
-              { text: 'RAFAEL JOSE PEREZ LEON', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 0] }
+              { text: 'Jhon Doe', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 0] }
             ]
           },
           {
@@ -335,8 +335,8 @@ export const generarPDF = (tipo, datos, ajustes, soloVista = false) => {
         
         // DEBE A
         { text: 'DEBE A:', alignment: 'center', bold: true, fontSize: 10, margin: [0, 0, 0, 6] },
-        { text: 'RAFAEL JOSÉ PÉREZ LEÓN', alignment: 'center', bold: true, fontSize: 11, margin: [0, 0, 0, 2] },
-        { text: 'PASAPORTE: 112472838', alignment: 'center', fontSize: 10, margin: [0, 0, 0, 20] },
+        { text: 'Jhon Doe', alignment: 'center', bold: true, fontSize: 11, margin: [0, 0, 0, 2] },
+        { text: 'PASAPORTE: XXXXXXXXX', alignment: 'center', fontSize: 10, margin: [0, 0, 0, 20] },
         
         // LA SUMA DE
         { text: 'LA SUMA DE:', alignment: 'center', bold: true, fontSize: 10, margin: [0, 0, 0, 6] },
@@ -374,8 +374,8 @@ export const generarPDF = (tipo, datos, ajustes, soloVista = false) => {
                 { text: '', border: [false, false, false, false] },
                 {
                   stack: [
-                    { text: 'RAFAEL JOSE PÉREZ LEÓN', bold: true, fontSize: 10, margin: [0, 0, 0, 2] },
-                    { text: 'PASAPORTE 112472838', fontSize: 9 }
+                    { text: 'Jhon Doe', bold: true, fontSize: 10, margin: [0, 0, 0, 2] },
+                    { text: 'PASAPORTE XXXXXXXXX', fontSize: 9 }
                   ],
                   border: [false, false, false, false]
                 }
