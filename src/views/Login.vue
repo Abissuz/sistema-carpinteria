@@ -1,5 +1,6 @@
 <template>
   <div class="login-wrapper">
+    <ModalRepo />
     <div class="login-card">
       
       <img src="/logo_sagrada.png" class="logoLogin" alt="Logo Sagrada Familia" />
@@ -48,6 +49,7 @@
 </template>
 
 <script setup>
+import ModalRepo from '../components/ModalRepo.vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
