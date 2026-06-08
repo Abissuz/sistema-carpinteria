@@ -2,7 +2,7 @@
 
 Una Aplicación Web Progresiva (PWA) desarrollada para digitalizar y optimizar los procesos administrativos, de inventario y facturación de un taller de carpintería real. 
 
-🔗 **[Ver Demostración en Vivo](AQUI_TU_LINK_LARGO_DE_VERCEL)**
+🔗 **[Ver Demostración en Vivo](https://sistema-carpinteria-git-demo-version-andres-projects-d3bbb369.vercel.app/login)**
 
 > **⚠️ Nota sobre la Demo:** Para proteger la privacidad y los datos financieros del negocio real, este enlace apunta a un entorno de demostración con una base de datos aislada e información anonimizada.
 > 
